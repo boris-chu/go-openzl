@@ -1,0 +1,76 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Build artifacts
+/bin/
+/dist/
+/build/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Claude Code files
+.clinerules
+.claude/
+*.claude.md
+.clinerules.md
+
+# Documentation (keep private for now)
+docs/
+
+# Cloned repositories (for research)
+openzl-zk/
+openzl-compression/
+
+# C/C++ build artifacts
+*.o
+*.a
+*.lo
+*.la
+*.obj
+*.lib
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile.cmake
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+*.swp
+*.orig
+
+# OS specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
