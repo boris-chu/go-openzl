@@ -11,8 +11,6 @@ import (
 )
 
 func TestCompressDecompress(t *testing.T) {
-	t.Skip("TODO: Implement in Phase 1")
-
 	tests := []struct {
 		name  string
 		input []byte
@@ -58,8 +56,6 @@ func TestCompressDecompress(t *testing.T) {
 }
 
 func TestCompressEmpty(t *testing.T) {
-	t.Skip("TODO: Implement in Phase 1")
-
 	_, err := openzl.Compress([]byte{})
 	if err == nil {
 		t.Error("Expected error for empty input")
@@ -67,8 +63,6 @@ func TestCompressEmpty(t *testing.T) {
 }
 
 func TestDecompressCorrupted(t *testing.T) {
-	t.Skip("TODO: Implement in Phase 1")
-
 	corrupted := []byte{0x00, 0x01, 0x02, 0x03}
 	_, err := openzl.Decompress(corrupted)
 	if err == nil {
@@ -77,8 +71,6 @@ func TestDecompressCorrupted(t *testing.T) {
 }
 
 func BenchmarkCompress(b *testing.B) {
-	b.Skip("TODO: Implement in Phase 1")
-
 	data := bytes.Repeat([]byte("benchmark test data "), 100)
 
 	b.ResetTimer()
@@ -93,8 +85,6 @@ func BenchmarkCompress(b *testing.B) {
 }
 
 func BenchmarkDecompress(b *testing.B) {
-	b.Skip("TODO: Implement in Phase 1")
-
 	data := bytes.Repeat([]byte("benchmark test data "), 100)
 	compressed, err := openzl.Compress(data)
 	if err != nil {

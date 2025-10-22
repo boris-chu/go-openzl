@@ -3,6 +3,12 @@
 
 package openzl
 
+import (
+	"fmt"
+
+	"github.com/borischu/go-openzl/internal/cgo"
+)
+
 // Compress compresses the input data using OpenZL with default settings.
 // It returns the compressed data or an error.
 //
@@ -17,8 +23,28 @@ package openzl
 //		log.Fatal(err)
 //	}
 func Compress(src []byte) ([]byte, error) {
-	// TODO: Implement in Phase 1
-	return nil, ErrNotImplemented
+	if len(src) == 0 {
+		return nil, ErrEmptyInput
+	}
+
+	// Create compression context
+	ctx, err := cgo.NewCCtx()
+	if err != nil {
+		return nil, fmt.Errorf("create context: %w", err)
+	}
+	defer ctx.Free()
+
+	// Allocate destination buffer
+	dstSize := cgo.CompressBound(len(src))
+	dst := make([]byte, dstSize)
+
+	// Compress
+	n, err := ctx.Compress(dst, src)
+	if err != nil {
+		return nil, fmt.Errorf("compress: %w", err)
+	}
+
+	return dst[:n], nil
 }
 
 // Decompress decompresses OpenZL-compressed data.
@@ -34,21 +60,31 @@ func Compress(src []byte) ([]byte, error) {
 //		log.Fatal(err)
 //	}
 func Decompress(src []byte) ([]byte, error) {
-	// TODO: Implement in Phase 1
-	return nil, ErrNotImplemented
-}
-
-// ErrNotImplemented is returned by functions not yet implemented
-var ErrNotImplemented = &NotImplementedError{}
-
-// NotImplementedError indicates that a feature is not yet implemented
-type NotImplementedError struct {
-	Feature string
-}
-
-func (e *NotImplementedError) Error() string {
-	if e.Feature != "" {
-		return "openzl: " + e.Feature + " not yet implemented"
+	if len(src) == 0 {
+		return nil, ErrEmptyInput
 	}
-	return "openzl: not yet implemented"
+
+	// Get decompressed size
+	dstSize, err := cgo.GetDecompressedSize(src)
+	if err != nil {
+		return nil, fmt.Errorf("get decompressed size: %w", err)
+	}
+
+	// Allocate destination buffer
+	dst := make([]byte, dstSize)
+
+	// Create decompression context
+	ctx, err := cgo.NewDCtx()
+	if err != nil {
+		return nil, fmt.Errorf("create context: %w", err)
+	}
+	defer ctx.Free()
+
+	// Decompress
+	n, err := ctx.Decompress(dst, src)
+	if err != nil {
+		return nil, fmt.Errorf("decompress: %w", err)
+	}
+
+	return dst[:n], nil
 }

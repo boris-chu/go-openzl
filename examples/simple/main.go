@@ -1,11 +1,6 @@
 // Copyright (c) 2025 Boris Chu and contributors
 // SPDX-License-Identifier: BSD-3-Clause
 
-//go:build ignore
-// +build ignore
-
-// This example will work once Phase 1 is implemented
-
 package main
 
 import (
