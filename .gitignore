@@ -39,9 +39,11 @@ coverage.html
 
 # Claude Code files
 .clinerules
-.claude/
 *.claude.md
 .clinerules.md
+
+# Claude configuration (keep these)
+# .claude/ directory is committed for project standards
 
 # Documentation (keep private for now)
 docs/
