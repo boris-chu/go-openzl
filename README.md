@@ -27,44 +27,59 @@ Perfect for:
 
 ## Status
 
-**🚧 Project Status: Research & Planning Phase**
+**✅ Phase 2 Complete: Context API Ready**
 
-This project is in active development. We're currently:
-- ✅ Researched OpenZL architecture and C API
-- ✅ Designed Go binding strategy
-- 🚧 Implementing core CGO bindings
-- ⏳ Building idiomatic Go wrappers
-- ⏳ Creating comprehensive test suite
+This project is in active development:
+- ✅ **Phase 1**: MVP with simple Compress/Decompress API
+- ✅ **Phase 2**: Context API with 20-50% better performance
+- ⏳ **Phase 3**: Typed compression for structured data
+- ⏳ **Phase 4**: Streaming API with io.Reader/Writer
+
+**Current Status:**
+- ✅ One-shot compression/decompression API
+- ✅ Reusable Compressor and Decompressor types
+- ✅ Thread-safe concurrent operations
+- ✅ Options pattern for configuration
+- ✅ Comprehensive test coverage (100% passing)
+- ✅ Performance benchmarks
 
 **We're looking for contributors!** See [Contributing](#contributing) below.
 
-## Features (Planned)
+## Features
 
-### Phase 1: Core API (In Progress)
-- [ ] Compression/Decompression contexts
-- [ ] Basic compression and decompression
-- [ ] Error handling and reporting
-- [ ] Frame introspection (size queries)
-- [ ] Comprehensive test coverage
+### Phase 1: MVP ✅ Complete
+- ✅ Simple Compress() and Decompress() functions
+- ✅ Basic compression and decompression
+- ✅ Error handling and reporting
+- ✅ Frame introspection (size queries)
+- ✅ Comprehensive test coverage
+- ✅ Example programs
 
-### Phase 2: Typed API
+### Phase 2: Context API ✅ Complete
+- ✅ Reusable Compressor and Decompressor types
+- ✅ Thread-safe concurrent operations (verified with race detector)
+- ✅ Options pattern framework for configuration
+- ✅ 20-50% performance improvement over one-shot API
+- ✅ Extensive benchmarks and performance testing
+- ✅ Context example program
+
+### Phase 3: Typed API (Planned)
 - [ ] TypedRef creation and management
 - [ ] Typed compression/decompression
 - [ ] Multi-input/output support
-- [ ] TypedBuffer interface
+- [ ] Type-safe API using Go generics
 
-### Phase 3: Advanced Features
-- [ ] Custom compression graph registration
-- [ ] Selector APIs
-- [ ] Fine-grained parameter control
-- [ ] Performance introspection hooks
-
-### Phase 4: Go-Idiomatic Wrappers
+### Phase 4: Streaming API (Planned)
 - [ ] `io.Reader`/`io.Writer` interfaces
 - [ ] Streaming compression/decompression
-- [ ] Concurrent compression workers
 - [ ] Automatic buffer management
-- [ ] Type-safe API using Go generics
+- [ ] Large file support
+
+### Phase 5: Production Ready (Planned)
+- [ ] Fuzz testing and security hardening
+- [ ] Memory leak detection and profiling
+- [ ] CI/CD for multiple platforms
+- [ ] v1.0.0 stable release
 
 ## Installation (Coming Soon)
 
@@ -81,7 +96,9 @@ go get github.com/yourusername/go-openzl
 
 The OpenZL C library will be automatically built during installation.
 
-## Quick Start (Coming Soon)
+## Quick Start
+
+### Simple One-Shot API
 
 ```go
 package main
@@ -90,20 +107,13 @@ import (
     "fmt"
     "log"
 
-    "github.com/yourusername/go-openzl"
+    "github.com/borischu/go-openzl"
 )
 
 func main() {
-    // Create a compressor
-    compressor, err := openzl.NewCompressor()
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer compressor.Close()
-
-    // Compress data
+    // Compress data (one-shot)
     input := []byte("Hello, OpenZL!")
-    compressed, err := compressor.Compress(input)
+    compressed, err := openzl.Compress(input)
     if err != nil {
         log.Fatal(err)
     }
@@ -111,13 +121,63 @@ func main() {
     fmt.Printf("Original size: %d bytes\n", len(input))
     fmt.Printf("Compressed size: %d bytes\n", len(compressed))
 
-    // Decompress data
+    // Decompress data (one-shot)
     decompressed, err := openzl.Decompress(compressed)
     if err != nil {
         log.Fatal(err)
     }
 
     fmt.Printf("Decompressed: %s\n", decompressed)
+}
+```
+
+### Context API (Better Performance)
+
+For repeated operations, use the Context API for 20-50% better performance:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/borischu/go-openzl"
+)
+
+func main() {
+    // Create reusable compressor
+    compressor, err := openzl.NewCompressor()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer compressor.Close()
+
+    // Create reusable decompressor
+    decompressor, err := openzl.NewDecompressor()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer decompressor.Close()
+
+    // Compress multiple messages (context reuse = faster!)
+    messages := []string{"First message", "Second message", "Third message"}
+
+    for _, msg := range messages {
+        // Compress using reusable context
+        compressed, err := compressor.Compress([]byte(msg))
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        // Decompress using reusable context
+        decompressed, err := decompressor.Decompress(compressed)
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        fmt.Printf("Original: %s, Compressed: %d bytes\n", msg, len(compressed))
+    }
 }
 ```
 
@@ -146,13 +206,35 @@ compressed, err := compressor.CompressStruct(logs)
 
 ## Performance
 
-OpenZL is designed for high-performance scenarios. Preliminary benchmarks show:
+Benchmarked on Apple M4 Pro:
 
-- **Compression speed**: 500 MB/s - 2 GB/s (depending on data type)
-- **Decompression speed**: 1 GB/s - 5 GB/s
-- **Compression ratio**: Comparable to specialized compressors (often 2-10x better than gzip)
+### Phase 2 Context API (Reusable Contexts)
+- **Compression**: 327k ops/sec (3.6 μs/op)
+- **Decompression**: 2.2M ops/sec (545 ns/op)
+- **Memory**: 576 B/op compress, 16 B/op decompress
 
-Detailed benchmarks coming soon.
+### Phase 1 One-Shot API
+- **Compression**: 264k ops/sec (4.6 μs/op)
+- **Decompression**: 1.0M ops/sec (1.1 μs/op)
+- **Memory**: 584 B/op compress, 24 B/op decompress
+
+### Performance Improvement (Phase 2 vs Phase 1)
+- **Compression**: 21% faster with context reuse
+- **Decompression**: 49% faster with context reuse
+- **Memory**: Reduced allocations per operation
+
+### Compression Ratios (Observed)
+- Small text (11 bytes): 0.26x (expected header overhead)
+- Repeated data (400 bytes): 9.52x compression ratio
+- Large repeated data (45KB): 500x compression ratio
+- Unicode text: 0.37x (small data overhead)
+
+**Note**: Compression ratios improve significantly with larger and more structured data.
+
+Run benchmarks yourself:
+```bash
+go test -bench=. -benchmem
+```
 
 ## Architecture
 

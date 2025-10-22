@@ -73,6 +73,10 @@ func (c *CCtx) Free() {
 // passing Go slice pointers to C using unsafe.Pointer. Both src and dst
 // must be non-empty.
 //
+// Note: OpenZL resets parameters after each compression, so this method
+// re-sets the format version before each compression operation to ensure
+// the context remains properly configured.
+//
 // Returns the number of bytes written to dst on success, or an error if:
 //   - src or dst is empty
 //   - dst is too small to hold the compressed data
@@ -85,7 +89,14 @@ func (c *CCtx) Compress(dst, src []byte) (int, error) {
 		return 0, errors.New("empty destination buffer")
 	}
 
-	result := C.ZL_CCtx_compress(
+	// OpenZL resets parameters after each compression, so we must
+	// re-set the format version before each compress call
+	result := C.ZL_CCtx_setParameter(c.ctx, C.ZL_CParam_formatVersion, C.ZL_MAX_FORMAT_VERSION)
+	if C.ZL_isError(result) != 0 {
+		return 0, c.getError(result)
+	}
+
+	result = C.ZL_CCtx_compress(
 		c.ctx,
 		unsafe.Pointer(&dst[0]),
 		C.size_t(len(dst)),
