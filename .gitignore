@@ -14,13 +14,20 @@
 # Go workspace file
 go.work
 
-# Dependency directories
-vendor/
+# Dependency directories (Go modules)
+# Note: We DO commit vendor/README.md to document setup
+# But vendor/openzl/ should be added as a git submodule
+vendor/openzl/
 
 # Build artifacts
 /bin/
 /dist/
 /build/
+
+# Test and coverage artifacts
+coverage.out
+coverage.html
+*.test
 
 # IDE and editor files
 .vscode/
