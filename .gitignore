@@ -45,7 +45,8 @@ coverage.html
 # Claude configuration (keep these)
 # .claude/ directory is committed for project standards
 
-# Documentation (keep private for now)
+# Documentation
+# Keep docs/ private - contains session contexts and internal notes
 docs/
 
 # Cloned repositories (for research)
