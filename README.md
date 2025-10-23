@@ -1,7 +1,9 @@
 # go-openzl
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/yourusername/go-openzl.svg)](https://pkg.go.dev/github.com/yourusername/go-openzl)
-[![Go Report Card](https://goreportcard.com/badge/github.com/yourusername/go-openzl)](https://goreportcard.com/report/github.com/yourusername/go-openzl)
+[![Test](https://github.com/boris-chu/go-openzl/actions/workflows/test.yml/badge.svg)](https://github.com/boris-chu/go-openzl/actions/workflows/test.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/boris-chu/go-openzl.svg)](https://pkg.go.dev/github.com/boris-chu/go-openzl)
+[![Go Report Card](https://goreportcard.com/badge/github.com/boris-chu/go-openzl)](https://goreportcard.com/report/github.com/boris-chu/go-openzl)
+[![codecov](https://codecov.io/gh/boris-chu/go-openzl/branch/main/graph/badge.svg)](https://codecov.io/gh/boris-chu/go-openzl)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 
 **Go bindings for Meta's OpenZL format-aware compression framework**
@@ -27,14 +29,14 @@ Perfect for:
 
 ## Status
 
-**✅ Phase 4 Complete: Streaming API with 2.3 GB/s Throughput!**
+**✅ Phase 5 In Progress: Production Hardening!**
 
 This project is in active development:
 - ✅ **Phase 1**: MVP with simple Compress/Decompress API
 - ✅ **Phase 2**: Context API with 20-50% better performance
 - ✅ **Phase 3**: Typed compression for structured data (2-50x better ratios!)
 - ✅ **Phase 4**: Streaming API with io.Reader/Writer (2287 MB/s throughput!)
-- ⏳ **Phase 5**: Production hardening
+- 🚀 **Phase 5**: Production hardening (benchmarks, edge cases, CI/CD)
 
 **Current Status:**
 - ✅ One-shot compression/decompression API
@@ -46,8 +48,12 @@ This project is in active development:
 - ✅ Automatic buffering and frame management
 - ✅ File compression/decompression support
 - ✅ Options pattern for configuration
-- ✅ Comprehensive test coverage (100% passing - 36/36 tests)
-- ✅ Performance benchmarks and metrics
+- ✅ Comprehensive test coverage (100% passing - 45/45 tests)
+- ✅ Fuzz testing (2M+ executions, zero crashes)
+- ✅ Edge case coverage (100MB files, 10K concurrent ops)
+- ✅ Performance benchmarks vs gzip/zstd
+- ✅ Complete godoc documentation (100% coverage)
+- 🚀 CI/CD with GitHub Actions
 
 **We're looking for contributors!** See [Contributing](#contributing) below.
 

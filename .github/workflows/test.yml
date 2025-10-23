@@ -1,0 +1,178 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }} with Go ${{ matrix.go-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        go-version: ['1.21', '1.22', '1.23']
+      fail-fast: false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Install build dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential git cmake
+
+    - name: Install build dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install cmake || true
+
+    - name: Clone and build OpenZL
+      run: |
+        cd /tmp
+        git clone --depth 1 https://github.com/facebook/openzl.git openzl-build
+        cd openzl-build
+        make lib -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+        cd $GITHUB_WORKSPACE
+        mkdir -p vendor/openzl/lib vendor/openzl/include
+        cp -r /tmp/openzl-build/include/openzl vendor/openzl/include/
+        cp /tmp/openzl-build/libopenzl.a vendor/openzl/lib/
+        find /tmp/openzl-build/deps/zstd -name "libzstd.a" -exec cp {} vendor/openzl/lib/ \;
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Verify dependencies
+      run: go mod verify
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Run tests
+      run: go test -v -race -timeout 10m ./...
+
+    - name: Run tests with coverage
+      run: go test -v -race -coverprofile=coverage.out -covermode=atomic -timeout 10m ./...
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.out
+        flags: unittests
+        name: codecov-${{ matrix.os }}-go${{ matrix.go-version }}
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  fuzz-test:
+    name: Fuzz Testing
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential git cmake
+
+    - name: Clone and build OpenZL
+      run: |
+        cd /tmp
+        git clone --depth 1 https://github.com/facebook/openzl.git openzl-build
+        cd openzl-build
+        make lib -j$(nproc)
+        cd $GITHUB_WORKSPACE
+        mkdir -p vendor/openzl/lib vendor/openzl/include
+        cp -r /tmp/openzl-build/include/openzl vendor/openzl/include/
+        cp /tmp/openzl-build/libopenzl.a vendor/openzl/lib/
+        find /tmp/openzl-build/deps/zstd -name "libzstd.a" -exec cp {} vendor/openzl/lib/ \;
+
+    - name: Run fuzz tests (short)
+      run: |
+        go test -fuzz=FuzzCompress -fuzztime=10s
+        go test -fuzz=FuzzCompressor -fuzztime=10s
+        go test -fuzz=FuzzNumericInt64 -fuzztime=10s
+        go test -fuzz=FuzzWriter -fuzztime=10s
+        go test -fuzz=FuzzDecompress -fuzztime=10s
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential git cmake
+
+    - name: Clone and build OpenZL
+      run: |
+        cd /tmp
+        git clone --depth 1 https://github.com/facebook/openzl.git openzl-build
+        cd openzl-build
+        make lib -j$(nproc)
+        cd $GITHUB_WORKSPACE
+        mkdir -p vendor/openzl/lib vendor/openzl/include
+        cp -r /tmp/openzl-build/include/openzl vendor/openzl/include/
+        cp /tmp/openzl-build/libopenzl.a vendor/openzl/lib/
+        find /tmp/openzl-build/deps/zstd -name "libzstd.a" -exec cp {} vendor/openzl/lib/ \;
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v4
+      with:
+        version: latest
+        args: --timeout=5m
+
+  benchmark:
+    name: Benchmark
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential git cmake
+
+    - name: Clone and build OpenZL
+      run: |
+        cd /tmp
+        git clone --depth 1 https://github.com/facebook/openzl.git openzl-build
+        cd openzl-build
+        make lib -j$(nproc)
+        cd $GITHUB_WORKSPACE
+        mkdir -p vendor/openzl/lib vendor/openzl/include
+        cp -r /tmp/openzl-build/include/openzl vendor/openzl/include/
+        cp /tmp/openzl-build/libopenzl.a vendor/openzl/lib/
+        find /tmp/openzl-build/deps/zstd -name "libzstd.a" -exec cp {} vendor/openzl/lib/ \;
+
+    - name: Run benchmarks
+      run: go test -bench=. -benchmem -run=^$ -benchtime=500ms ./...
