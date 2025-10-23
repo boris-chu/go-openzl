@@ -15,9 +15,12 @@
 go.work
 
 # Dependency directories (Go modules)
-# Note: We DO commit vendor/README.md to document setup
-# But vendor/openzl/ should be added as a git submodule
+# Vendor directory contains Go dependencies and C libraries
+# Go dependencies are regenerated with: go mod vendor
+# C libraries are built separately (see Makefile)
 vendor/openzl/
+vendor/github.com/
+vendor/modules.txt
 
 # Build artifacts
 /bin/
