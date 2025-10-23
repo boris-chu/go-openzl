@@ -105,8 +105,20 @@ func (c *CCtx) CompressTypedRef(dst []byte, tref *TypedRef) (int, error) {
 		return 0, errors.New("nil TypedRef")
 	}
 
+	// Reset parameters to clean state before typed compression
+	result := C.ZL_CCtx_resetParameters(c.ctx)
+	if C.ZL_isError(result) != 0 {
+		return 0, c.getError(result)
+	}
+
 	// Set format version (required by OpenZL before each compression)
-	result := C.ZL_CCtx_setParameter(c.ctx, C.ZL_CParam_formatVersion, C.ZL_MAX_FORMAT_VERSION)
+	result = C.ZL_CCtx_setParameter(c.ctx, C.ZL_CParam_formatVersion, C.ZL_MAX_FORMAT_VERSION)
+	if C.ZL_isError(result) != 0 {
+		return 0, c.getError(result)
+	}
+
+	// Set compression level (may be required for typed compression)
+	result = C.ZL_CCtx_setParameter(c.ctx, C.ZL_CParam_compressionLevel, 1) // Minimum level
 	if C.ZL_isError(result) != 0 {
 		return 0, c.getError(result)
 	}
