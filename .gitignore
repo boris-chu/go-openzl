@@ -44,9 +44,7 @@ coverage.html
 .clinerules
 *.claude.md
 .clinerules.md
-
-# Claude configuration (keep these)
-# .claude/ directory is committed for project standards
+.claude/
 
 # Documentation
 # Keep docs/ private - contains session contexts and internal notes
