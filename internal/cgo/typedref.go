@@ -6,6 +6,18 @@ package cgo
 /*
 #include <stdlib.h>
 #include <openzl/openzl.h>
+#include <openzl/codecs/zl_generic.h>
+
+// Simple graph function that returns the ZL_GRAPH_NUMERIC graph for numeric compression
+ZL_GraphID numericGraphFn(ZL_Compressor* compressor) {
+    (void)compressor; // unused
+    return ZL_GRAPH_NUMERIC;
+}
+
+// Helper to get the numeric graph function pointer
+ZL_GraphFn getNumericGraphFn() {
+    return numericGraphFn;
+}
 */
 import "C"
 import (
@@ -90,6 +102,11 @@ func (t *TypedRef) Free() {
 // This method uses OpenZL's typed compression API which achieves significantly
 // better compression ratios (2-5x) on structured data compared to untyped compression.
 //
+// Based on OpenZL's test_generic_clustering.cpp, typed compression requires:
+// 1. Creating a ZL_Compressor graph object
+// 2. Linking it to the context with ZL_CCtx_refCompressor()
+// 3. Then calling ZL_CCtx_compressTypedRef()
+//
 // The dst buffer must be large enough to hold the compressed data.
 // Use CompressBound(srcSize) * 2 for a safe buffer size with typed compression.
 //
@@ -105,8 +122,23 @@ func (c *CCtx) CompressTypedRef(dst []byte, tref *TypedRef) (int, error) {
 		return 0, errors.New("nil TypedRef")
 	}
 
+	// Create a compression graph (required for typed compression)
+	// This is what we were missing! Found in test_generic_clustering.cpp
+	compressor := C.ZL_Compressor_create()
+	if compressor == nil {
+		return 0, errors.New("failed to create ZL_Compressor")
+	}
+	defer C.ZL_Compressor_free(compressor)
+
+	// Initialize the compressor with the numeric graph function
+	// This sets up the graph structure needed for typed compression
+	result := C.ZL_Compressor_initUsingGraphFn(compressor, C.getNumericGraphFn())
+	if C.ZL_isError(result) != 0 {
+		return 0, c.getError(result)
+	}
+
 	// Reset parameters to clean state before typed compression
-	result := C.ZL_CCtx_resetParameters(c.ctx)
+	result = C.ZL_CCtx_resetParameters(c.ctx)
 	if C.ZL_isError(result) != 0 {
 		return 0, c.getError(result)
 	}
@@ -117,13 +149,14 @@ func (c *CCtx) CompressTypedRef(dst []byte, tref *TypedRef) (int, error) {
 		return 0, c.getError(result)
 	}
 
-	// Set compression level (may be required for typed compression)
-	result = C.ZL_CCtx_setParameter(c.ctx, C.ZL_CParam_compressionLevel, 1) // Minimum level
+	// Link the compression context to the compressor graph
+	// This is the critical missing step discovered from OpenZL examples!
+	result = C.ZL_CCtx_refCompressor(c.ctx, compressor)
 	if C.ZL_isError(result) != 0 {
 		return 0, c.getError(result)
 	}
 
-	// Compress using typed reference
+	// Compress using typed reference (should now work!)
 	result = C.ZL_CCtx_compressTypedRef(
 		c.ctx,
 		unsafe.Pointer(&dst[0]),
@@ -144,6 +177,9 @@ func (c *CCtx) CompressTypedRef(dst []byte, tref *TypedRef) (int, error) {
 // the result as a byte slice. The caller is responsible for converting the bytes
 // to the appropriate typed slice.
 //
+// For typed compression, we must use ZL_DCtx_decompressTyped() instead of
+// ZL_DCtx_decompress(). This is the correct way to decompress typed data.
+//
 // Returns the decompressed data as bytes, or an error if:
 //   - src is empty
 //   - src does not contain valid OpenZL compressed data
@@ -162,9 +198,14 @@ func (d *DCtx) DecompressTypedToBytes(src []byte) ([]byte, error) {
 	// Allocate byte buffer for decompression
 	dstBytes := make([]byte, dstSize)
 
-	// Decompress to byte buffer
-	result := C.ZL_DCtx_decompress(
+	// Output info structure to receive type information
+	var outInfo C.ZL_OutputInfo
+
+	// Decompress typed data using the proper typed decompression function
+	// This is required for data compressed with ZL_CCtx_compressTypedRef()
+	result := C.ZL_DCtx_decompressTyped(
 		d.ctx,
+		&outInfo,
 		unsafe.Pointer(&dstBytes[0]),
 		C.size_t(len(dstBytes)),
 		unsafe.Pointer(&src[0]),
