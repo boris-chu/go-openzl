@@ -47,6 +47,17 @@ func Compress(src []byte) ([]byte, error) {
 	return dst[:n], nil
 }
 
+// CompressBound returns the maximum size of compressed data for input of size srcSize.
+//
+// Use this function to pre-allocate buffers for CompressTo():
+//
+//	dst := make([]byte, openzl.CompressBound(len(src)))
+//	n, err := compressor.CompressTo(dst, src)
+//	compressed := dst[:n]
+func CompressBound(srcSize int) int {
+	return cgo.CompressBound(srcSize)
+}
+
 // Decompress decompresses OpenZL-compressed data.
 // It returns the decompressed data or an error.
 //

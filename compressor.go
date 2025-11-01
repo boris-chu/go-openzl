@@ -10,6 +10,15 @@ import (
 	"github.com/borischu/go-openzl/internal/cgo"
 )
 
+// bufferPool provides reusable compression buffers (Klaus Post pattern).
+// This reduces allocations by reusing buffers across compressions.
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		// Start with 128KB buffers (typical compression size)
+		return make([]byte, 128*1024)
+	},
+}
+
 // Compressor provides a reusable compression context with thread safety.
 //
 // Unlike the one-shot Compress function, Compressor maintains an internal
@@ -118,9 +127,19 @@ func (c *Compressor) Compress(src []byte) ([]byte, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Allocate destination buffer
+	// Get buffer from pool (Klaus Post pattern for reduced allocations)
 	dstSize := cgo.CompressBound(len(src))
-	dst := make([]byte, dstSize)
+	var dst []byte
+
+	if poolBuf := bufferPool.Get().([]byte); cap(poolBuf) >= dstSize {
+		// Reuse pooled buffer if large enough
+		dst = poolBuf[:dstSize]
+		defer bufferPool.Put(poolBuf)
+	} else {
+		// Buffer too small, allocate new one
+		// (Don't put it back in pool - wrong size)
+		dst = make([]byte, dstSize)
+	}
 
 	// Compress using reusable context
 	n, err := c.ctx.Compress(dst, src)
@@ -128,7 +147,61 @@ func (c *Compressor) Compress(src []byte) ([]byte, error) {
 		return nil, fmt.Errorf("compress: %w", err)
 	}
 
-	return dst[:n], nil
+	// Return copy (don't return pooled buffer to caller!)
+	result := make([]byte, n)
+	copy(result, dst[:n])
+	return result, nil
+}
+
+// CompressTo compresses src into dst, returning the number of bytes written.
+//
+// This method allows the caller to provide the destination buffer, avoiding
+// allocations entirely in steady-state compression. This is a Klaus Post-inspired
+// pattern for maximum performance.
+//
+// The dst buffer must be large enough to hold the compressed data. Use
+// CompressBound(len(src)) to determine the required size.
+//
+// Returns an error if:
+//   - src is empty
+//   - dst is too small to hold compressed data
+//   - compression fails
+//
+// Example (zero allocations in steady state):
+//
+//	// Pre-allocate buffer once
+//	dst := make([]byte, openzl.CompressBound(maxInputSize))
+//
+//	for _, data := range inputs {
+//		n, err := compressor.CompressTo(dst, data)
+//		if err != nil {
+//			log.Fatal(err)
+//		}
+//		// Use dst[:n] - no allocation!
+//		sendCompressed(dst[:n])
+//	}
+func (c *Compressor) CompressTo(dst, src []byte) (int, error) {
+	if len(src) == 0 {
+		return 0, ErrEmptyInput
+	}
+
+	// Check dst capacity
+	needed := cgo.CompressBound(len(src))
+	if len(dst) < needed {
+		return 0, fmt.Errorf("dst too small: need %d bytes, have %d", needed, len(dst))
+	}
+
+	// Lock for thread safety
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Compress directly into user-provided buffer (zero allocations!)
+	n, err := c.ctx.Compress(dst, src)
+	if err != nil {
+		return 0, fmt.Errorf("compress: %w", err)
+	}
+
+	return n, nil
 }
 
 // Close releases the underlying compression context and frees associated memory.
