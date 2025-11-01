@@ -341,7 +341,10 @@ Chain multiple transforms for specialized compression.
 | **v0.1.0** | **10 weeks** | **Oct 2025** | **Initial Release ✅** |
 | v1.0.0 | 8 weeks | Q1 2026 | Stable Release 🎯 |
 | v1.1.0 | 4 weeks | Q2 2026 | Enhanced Params 🚀 |
-| v2.0.0 | 8 weeks | Q3 2026 | Advanced Features 🔬 |
+| v2.0.0 | 6 months | Q3 2026 | Hybrid (CGO + Pure Go) 🔬 |
+| v3.0.0 | 18 months | Q1 2027 | Pure Go Default 🚀 |
+
+**Note**: See [docs/PURE_GO_MIGRATION_PLAN.md](docs/PURE_GO_MIGRATION_PLAN.md) for the detailed pure Go migration roadmap.
 
 ---
 

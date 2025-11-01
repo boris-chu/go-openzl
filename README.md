@@ -695,6 +695,20 @@ Which advanced features would be most valuable to you?
 
 Your input helps us prioritize development!
 
+## Pure Go Migration
+
+We're planning a **pure Go implementation** to eliminate CGO dependency! This is a massive undertaking (18-month timeline) that will:
+- Remove CGO requirement for easier cross-compilation
+- Provide full control over optimizations
+- Potentially achieve better performance than C
+- Build on Klaus Post's Go compression expertise
+
+See [docs/PURE_GO_MIGRATION_PLAN.md](docs/PURE_GO_MIGRATION_PLAN.md) for the complete 7-phase roadmap.
+
+**Timeline**: 18 months | **Phases**: 0-7 | **Strategy**: Dual implementation (CGO + Pure Go)
+
+Interested in contributing? This is an ambitious project and we'd love your help!
+
 ## License
 
 This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
