@@ -193,9 +193,10 @@ func DefaultRegistry() *Registry {
 	reg := NewRegistry()
 	// Phase 2: Register codecs
 	reg.Register(NewIdentity())
-	reg.Register(NewDelta(8))  // Default to 8-byte (uint64) elements
-	reg.Register(NewZigZag(4)) // Default to 4-byte (int32) elements
-	// Future: reg.Register(NewConstant()), reg.Register(NewBitpack()), etc.
+	reg.Register(NewConstant(4)) // Default to 4-byte elements
+	reg.Register(NewDelta(8))    // Default to 8-byte (uint64) elements
+	reg.Register(NewZigZag(4))   // Default to 4-byte (int32) elements
+	// Future: reg.Register(NewBitpack()), etc.
 	return reg
 }
 
