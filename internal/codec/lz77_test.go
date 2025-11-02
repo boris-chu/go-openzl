@@ -235,7 +235,7 @@ func TestHashTable(t *testing.T) {
 	data := []byte("hello world hello")
 
 	// Insert positions
-	hash.Insert(data, 0) // "hel"
+	hash.Insert(data, 0)  // "hel"
 	hash.Insert(data, 12) // "hel" (same hash)
 
 	// Lookup should find both positions

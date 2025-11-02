@@ -106,6 +106,9 @@ const (
 	// IDLZ77 is LZ77 dictionary compression
 	IDLZ77 ID = 12
 
+	// IDRLE is Run-Length Encoding
+	IDRLE ID = 13
+
 	// IDZstd is Zstandard compression
 	IDZstd ID = 20
 
@@ -135,6 +138,8 @@ func (id ID) String() string {
 		return "Huffman"
 	case IDLZ77:
 		return "LZ77"
+	case IDRLE:
+		return "RLE"
 	case IDZstd:
 		return "Zstd"
 	default:
@@ -215,8 +220,9 @@ func DefaultRegistry() *Registry {
 	reg.Register(NewFSE())     // FSE (Finite State Entropy) - Klaus Post library
 	reg.Register(NewHuffman()) // Huffman (huff0) - Klaus Post library
 
-	// Phase 5 (Advanced Codecs): LZ77, Transpose, ROLZ, etc.
+	// Phase 5 (Advanced Codecs): LZ77, RLE, Transpose, ROLZ, etc.
 	reg.Register(NewLZ77()) // LZ77 dictionary compression - critical for JSON/text
+	reg.Register(NewRLE())  // RLE run-length encoding - critical for sparse/repetitive data
 
 	return reg
 }

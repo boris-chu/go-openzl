@@ -5,22 +5,26 @@
 
 package codec
 
-// decode64SIMD falls back to scalar implementation on non-amd64 platforms
+// decode64SIMD falls back to scalar implementation on non-amd64 platforms.
+// Note: These SIMD stubs are intentionally unused - scalar is faster for Delta.
+// They're kept for reference and future assembly implementations.
+//
+//nolint:unused
 func (c *Delta) decode64SIMD(dst, src []byte, numElements int) (int, error) {
 	return c.decode64(dst, src, numElements)
 }
 
-// decode32SIMD falls back to scalar implementation on non-amd64 platforms
+//nolint:unused
 func (c *Delta) decode32SIMD(dst, src []byte, numElements int) (int, error) {
 	return c.decode32(dst, src, numElements)
 }
 
-// encode64SIMD falls back to scalar implementation on non-amd64 platforms
+//nolint:unused
 func (c *Delta) encode64SIMD(dst, src []byte, numElements int) (int, error) {
 	return c.encode64(dst, src, numElements)
 }
 
-// encode32SIMD falls back to scalar implementation on non-amd64 platforms
+//nolint:unused
 func (c *Delta) encode32SIMD(dst, src []byte, numElements int) (int, error) {
 	return c.encode32(dst, src, numElements)
 }

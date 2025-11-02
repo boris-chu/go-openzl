@@ -15,16 +15,17 @@ import (
 // gzip, zlib, and many other compression formats.
 //
 // Algorithm:
-//   1. Maintain a sliding window of recent data (default 32KB)
-//   2. For each position, search for longest match in window
-//   3. Output either:
-//      - Literal: single byte (no match found)
-//      - Match: (distance, length) pair pointing to previous occurrence
+//  1. Maintain a sliding window of recent data (default 32KB)
+//  2. For each position, search for longest match in window
+//  3. Output either:
+//     - Literal: single byte (no match found)
+//     - Match: (distance, length) pair pointing to previous occurrence
 //
 // Example:
-//   Input:  "Hello, Hello, World!"
-//   Output: "Hello, " + Match(7,6) + " World!"
-//           (Match points back 7 bytes, copies 6 bytes)
+//
+//	Input:  "Hello, Hello, World!"
+//	Output: "Hello, " + Match(7,6) + " World!"
+//	        (Match points back 7 bytes, copies 6 bytes)
 //
 // This is critical for JSON/text compression:
 //   - Repeated field names: "password_id" appears 141 times → 1 + 140 references
@@ -38,7 +39,6 @@ import (
 //
 // Combined with Huffman/FSE:
 //   - JSON: 15-20x total compression (competitive with zstd)
-//
 type LZ77 struct {
 	windowSize int // Sliding window size (default 32KB)
 	maxMatch   int // Maximum match length (default 258)
@@ -93,13 +93,13 @@ type Token struct {
 // Encode compresses data using LZ77 dictionary compression.
 //
 // Output format (token stream):
-//   [num_tokens(4)] [tokens...]
-//   Each token:
-//     - Literal: [type=0(1)] [byte(1)]
-//     - Match:   [type=1(1)] [distance(2)] [length(2)]
+//
+//	[num_tokens(4)] [tokens...]
+//	Each token:
+//	  - Literal: [type=0(1)] [byte(1)]
+//	  - Match:   [type=1(1)] [distance(2)] [length(2)]
 //
 // This preserves the order of literals and matches, making decode trivial.
-//
 func (c *LZ77) Encode(dst, src, params []byte) (int, error) {
 	if len(src) == 0 {
 		// Empty input
@@ -147,7 +147,6 @@ func (c *LZ77) Encode(dst, src, params []byte) (int, error) {
 // Decode decompresses LZ77-encoded data back to original.
 //
 // The decoder is simple: read tokens and execute them in order.
-//
 func (c *LZ77) Decode(dst, src, params []byte) (int, error) {
 	if len(src) < 4 {
 		return 0, fmt.Errorf("lz77: input too small (need at least 4 bytes)")
@@ -256,12 +255,12 @@ func (c *LZ77) findMatch(src []byte, pos int, hash *HashTable) (int, int) {
 // encodeTokens writes tokens to output buffer in token stream format.
 //
 // Format:
-//   [num_tokens(4)] [token1] [token2] ...
+//
+//	[num_tokens(4)] [token1] [token2] ...
 //
 // Each token:
 //   - Literal: [type=0(1)] [byte(1)]          = 2 bytes
 //   - Match:   [type=1(1)] [distance(2)] [length(2)] = 5 bytes
-//
 func (c *LZ77) encodeTokens(dst []byte, tokens []Token) (int, error) {
 	// Calculate required size
 	requiredSize := 4 // num_tokens header
@@ -305,7 +304,7 @@ func (c *LZ77) encodeTokens(dst []byte, tokens []Token) (int, error) {
 // Maps 3-byte sequences to their positions in the input.
 // Uses simple hash function: (b0 << 16) | (b1 << 8) | b2
 type HashTable struct {
-	table map[uint32][]int
+	table    map[uint32][]int
 	maxChain int // Maximum positions to store per hash
 }
 
