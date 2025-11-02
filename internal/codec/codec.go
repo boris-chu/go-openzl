@@ -103,6 +103,9 @@ const (
 	// IDHuffman is Huffman coding
 	IDHuffman ID = 11
 
+	// IDLZ77 is LZ77 dictionary compression
+	IDLZ77 ID = 12
+
 	// IDZstd is Zstandard compression
 	IDZstd ID = 20
 
@@ -130,6 +133,8 @@ func (id ID) String() string {
 		return "FSE"
 	case IDHuffman:
 		return "Huffman"
+	case IDLZ77:
+		return "LZ77"
 	case IDZstd:
 		return "Zstd"
 	default:
@@ -210,7 +215,9 @@ func DefaultRegistry() *Registry {
 	reg.Register(NewFSE())     // FSE (Finite State Entropy) - Klaus Post library
 	reg.Register(NewHuffman()) // Huffman (huff0) - Klaus Post library
 
-	// Phase 5 (Advanced Codecs): Transpose, LZ, ROLZ, etc.
+	// Phase 5 (Advanced Codecs): LZ77, Transpose, ROLZ, etc.
+	reg.Register(NewLZ77()) // LZ77 dictionary compression - critical for JSON/text
+
 	return reg
 }
 
