@@ -116,14 +116,14 @@ This project is in active development:
   - Magic number validation, version detection
   - Output metadata extraction
 
-- ✅ **Codec Framework** (Phase 2 Milestone 1 Complete)
+- ✅ **Codec Framework** (Phase 2 Complete)
   - Codec interface with Decode/Encode methods
   - Registry system for codec lookup
-  - Identity codec (passthrough) implementation
-  - 15 tests (100% passing)
-  - 95-125 GB/s throughput (baseline)
+  - **5 codecs implemented**: Identity, Constant, Delta, ZigZag, Bitpack
+  - 122 codec tests (100% passing)
+  - 2-125 GB/s performance range
 
-- ✅ **Graph Executor** (Phase 2 Milestone 2 Complete)
+- ✅ **Graph Executor** (Phase 2 Complete)
   - Compression graph parser (varint-based binary format)
   - Graph executor with topological ordering
   - Multi-output graph support
@@ -152,10 +152,12 @@ outputs, _ := executor.Execute(parsedGraph,
 // outputs[0] contains decompressed data!
 ```
 
-**Next Steps**:
-- 🚧 Implement Delta codec (real compression)
-- 🚧 Implement ZigZag codec (signed integer handling)
-- 🚧 Implement Bitpack codec (minimal bit packing)
+**Next Steps (Phase 3 - Entropy Coding)**:
+- ✅ Delta codec (real compression) - COMPLETE
+- ✅ ZigZag codec (signed integer handling) - COMPLETE
+- ✅ Bitpack codec (minimal bit packing) - COMPLETE
+- ✅ Constant codec (extreme compression for identical values) - COMPLETE
+- ✅ Identity codec (passthrough baseline) - COMPLETE
 - 🚧 Integrate FSE entropy coder (using klauspost/compress)
 - 🚧 Integrate Huffman coder (using klauspost/compress)
 - 🚧 Public API integration
@@ -169,11 +171,12 @@ outputs, _ := executor.Execute(parsedGraph,
 - 🚀 **Better performance**: Optimized Go code with fewer FFI calls
 
 **Test Coverage**:
-- 273 total tests (100% passing)
+- 388 total tests (100% passing)
 - Frame parser: 79 tests
-- Codec system: 15 tests
+- Codec system: 122 tests (5 codecs implemented)
 - Graph executor: 42 tests
 - Integration tests: 5 end-to-end tests
+- CGO implementation: 140 tests
 
 ### Phase 7: Advanced Features (Planned - v1.1+)
 See [Advanced Features Roadmap](#advanced-features-roadmap) below for Python/C++ feature parity plans.
@@ -482,7 +485,7 @@ go-openzl/
 │   └── writer.go       # Streaming writer
 ├── internal/           # Pure Go decoder (in development)
 │   ├── frame/          # Frame parser (Phase 1 ✅)
-│   ├── codec/          # Codec interface & registry (Phase 2 ✅)
+│   ├── codec/          # 5 codecs: Identity, Constant, Delta, ZigZag, Bitpack (Phase 2 ✅)
 │   └── graph/          # Graph executor (Phase 2 ✅)
 ├── examples/           # Usage examples
 │   ├── simple/         # Basic compression example
