@@ -84,6 +84,9 @@ issues:
     - path: internal/codec/(delta|zigzag|constant)\.go
       linters:
         - dupl  # Codec encode/decode functions have similar structure by design
+    - path: purgo/decoder\.go
+      linters:
+        - dupl  # Typed decompression functions have similar structure by design (type safety)
     - path: internal/codec/bitpack\.go
       linters:
         - gocyclo  # Bitpack encode has high complexity due to bit manipulation

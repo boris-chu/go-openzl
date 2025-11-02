@@ -3,6 +3,7 @@ package purgo
 import (
 	"bytes"
 	"encoding/binary"
+	"math"
 	"testing"
 
 	"github.com/borischu/go-openzl/internal/codec"
@@ -256,7 +257,7 @@ func TestDecompressFloat64_SpecialValues(t *testing.T) {
 	// Test special float64 values
 	original := []float64{
 		0.0,
-		-0.0,
+		math.Copysign(0, -1),    // Negative zero (Go literals don't support -0.0)
 		1.7976931348623157e+308, // Max float64
 		2.2250738585072014e-308, // Min positive float64
 	}
@@ -462,7 +463,7 @@ func TestDecompressUint32_Basic(t *testing.T) {
 // Tests for DecompressFloat32
 
 func TestDecompressFloat32_Basic(t *testing.T) {
-	original := []float32{1.1, 2.2, -3.3, 0.0, -0.0}
+	original := []float32{1.1, 2.2, -3.3, 0.0, float32(math.Copysign(0, -1))}
 
 	buf := new(bytes.Buffer)
 	for _, val := range original {
