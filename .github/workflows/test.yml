@@ -104,13 +104,13 @@ jobs:
 
     - name: Run fuzz tests (short)
       run: |
-        go test -mod=mod -fuzz=FuzzCompress -fuzztime=10s ./
-        go test -mod=mod -fuzz=FuzzCompressor -fuzztime=10s ./
-        go test -mod=mod -fuzz=FuzzNumericInt64 -fuzztime=10s ./
-        go test -mod=mod -fuzz=FuzzWriter -fuzztime=10s ./
-        go test -mod=mod -fuzz=FuzzDecompress -fuzztime=10s ./
-        go test -mod=mod -fuzz=FuzzParse -fuzztime=10s ./internal/frame/
-        go test -mod=mod -fuzz=FuzzVarint -fuzztime=10s ./internal/frame/
+        go test -mod=mod -fuzz='^FuzzCompress$$' -fuzztime=10s ./
+        go test -mod=mod -fuzz='^FuzzCompressor$$' -fuzztime=10s ./
+        go test -mod=mod -fuzz='^FuzzNumericInt64$$' -fuzztime=10s ./
+        go test -mod=mod -fuzz='^FuzzWriter$$' -fuzztime=10s ./
+        go test -mod=mod -fuzz='^FuzzDecompress$$' -fuzztime=10s ./
+        go test -mod=mod -fuzz='^FuzzParse$$' -fuzztime=10s ./internal/frame/
+        go test -mod=mod -fuzz='^FuzzVarint$$' -fuzztime=10s ./internal/frame/
 
   lint:
     name: Lint
@@ -145,7 +145,9 @@ jobs:
       uses: golangci/golangci-lint-action@v4
       with:
         version: latest
-        args: --timeout=5m
+        args: --timeout=5m --build-tags=
+      env:
+        GOFLAGS: -mod=mod
 
   benchmark:
     name: Benchmark
