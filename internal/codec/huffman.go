@@ -106,5 +106,29 @@ func (h *Huffman) Decode(dst, src, params []byte) (int, error) {
 // Note: Encoding is not implemented in Phase 3 (decompression only).
 // This will be added in Phase 4 when we implement compression.
 func (h *Huffman) Encode(dst, src, params []byte) (int, error) {
-	return 0, fmt.Errorf("huffman encode not yet implemented (decompression only in Phase 3)")
+	if len(src) == 0 {
+		return 0, nil
+	}
+
+	// Use Klaus Post's Compress1X (single stream)
+	// This is simpler and works well for most data
+	scratch := &huff0.Scratch{}
+	compressed, reused, err := huff0.Compress1X(src, scratch)
+	if err != nil {
+		return 0, fmt.Errorf("huffman compress1x: %w", err)
+	}
+
+	// Check if compressed data fits in destination
+	if len(compressed) > len(dst) {
+		return 0, ErrBufferTooSmall
+	}
+
+	// Copy compressed data to destination
+	n := copy(dst, compressed)
+
+	// Note: 'reused' indicates if the scratch buffer was reused
+	// We don't need to track this for one-shot compression
+	_ = reused
+
+	return n, nil
 }

@@ -12,13 +12,10 @@ import (
 	"github.com/borischu/go-openzl/purgo"
 )
 
-// Compress compresses the input data using OpenZL with default settings.
-// It returns the compressed data or an error.
+// Compress compresses the input data using Pure Go OpenZL encoder.
 //
-// Note: Pure Go compression is not yet implemented. This function returns
-// an error when CGO is disabled. Use CGO build for compression support.
-//
-// To enable CGO: CGO_ENABLED=1 go build
+// The Pure Go implementation uses the Identity codec for maximum compatibility.
+// For better compression ratios with advanced codecs, build with CGO_ENABLED=1.
 //
 // Example:
 //
@@ -27,8 +24,19 @@ import (
 //	if err != nil {
 //		log.Fatal(err)
 //	}
+//
+// Note: Currently uses Identity codec (passthrough). For advanced compression
+// with Delta, ZigZag, FSE, and Huffman codecs, use CGO_ENABLED=1.
 func Compress(src []byte) ([]byte, error) {
-	return nil, fmt.Errorf("compression requires CGO (build with CGO_ENABLED=1)")
+	if len(src) == 0 {
+		return nil, ErrEmptyInput
+	}
+
+	result, err := purgo.Compress(src)
+	if err != nil {
+		return nil, fmt.Errorf("compress: %w", err)
+	}
+	return result, nil
 }
 
 // CompressBound returns the maximum size of compressed data for input of size srcSize.

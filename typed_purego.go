@@ -20,11 +20,37 @@ type Numeric interface {
 	int8 | uint8 | int16 | uint16 | int32 | uint32 | int64 | uint64 | float32 | float64
 }
 
-// CompressNumeric compresses a slice of numeric values using OpenZL's typed compression.
+// CompressNumeric compresses a slice of numeric values using Pure Go OpenZL encoder.
 //
-// Note: Compression requires CGO. Build with CGO_ENABLED=1 to use this function.
+// The Pure Go implementation uses the Identity codec. For better compression
+// ratios with Delta, ZigZag, and entropy coding, build with CGO_ENABLED=1.
+//
+// Example:
+//
+//	numbers := []int64{1, 2, 3, 4, 5}
+//	compressed, err := openzl.CompressNumeric(numbers)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 func CompressNumeric[T Numeric](data []T) ([]byte, error) {
-	return nil, fmt.Errorf("typed compression requires CGO (build with CGO_ENABLED=1)")
+	if len(data) == 0 {
+		return nil, ErrEmptyInput
+	}
+
+	// Convert typed slice to bytes
+	buf := new(bytes.Buffer)
+	for _, val := range data {
+		if err := binary.Write(buf, binary.LittleEndian, val); err != nil {
+			return nil, fmt.Errorf("write element: %w", err)
+		}
+	}
+
+	// Compress the bytes
+	result, err := purgo.Compress(buf.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("compress: %w", err)
+	}
+	return result, nil
 }
 
 // DecompressNumeric decompresses data that was compressed with CompressNumeric.

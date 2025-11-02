@@ -83,5 +83,24 @@ func (f *FSE) Decode(dst, src, params []byte) (int, error) {
 // Note: Encoding is not implemented in Phase 3 (decompression only).
 // This will be added in Phase 4 when we implement compression.
 func (f *FSE) Encode(dst, src, params []byte) (int, error) {
-	return 0, fmt.Errorf("fse encode not yet implemented (decompression only in Phase 3)")
+	if len(src) == 0 {
+		return 0, nil
+	}
+
+	// Use Klaus Post's FSE compression
+	scratch := &fse.Scratch{}
+	compressed, err := fse.Compress(src, scratch)
+	if err != nil {
+		return 0, fmt.Errorf("fse compress: %w", err)
+	}
+
+	// Check if compressed data fits in destination
+	if len(compressed) > len(dst) {
+		return 0, ErrBufferTooSmall
+	}
+
+	// Copy compressed data to destination
+	n := copy(dst, compressed)
+
+	return n, nil
 }

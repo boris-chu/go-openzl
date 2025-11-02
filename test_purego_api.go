@@ -60,27 +60,53 @@ func TestPureGoDecompressNumeric(t *testing.T) {
 	}
 }
 
-// TestPureGoCompressReturnsError verifies that compression functions return errors in Pure Go mode.
-func TestPureGoCompressReturnsError(t *testing.T) {
-	// Test Compress
-	_, err := Compress([]byte("test"))
-	if err == nil {
-		t.Error("Compress should return error in Pure Go mode")
+// TestPureGoCompressionWorks verifies that compression works in Pure Go mode.
+func TestPureGoCompressionWorks(t *testing.T) {
+	// Test Compress - should work now!
+	data := []byte("test data for compression")
+	compressed, err := Compress(data)
+	if err != nil {
+		t.Fatalf("Compress failed: %v", err)
+	}
+	if len(compressed) == 0 {
+		t.Error("Compress returned empty data")
 	}
 
-	// Test CompressNumeric
-	_, err = CompressNumeric([]int64{1, 2, 3})
-	if err == nil {
-		t.Error("CompressNumeric should return error in Pure Go mode")
+	// Verify roundtrip
+	decompressed, err := Decompress(compressed)
+	if err != nil {
+		t.Fatalf("Decompress failed: %v", err)
+	}
+	if string(decompressed) != string(data) {
+		t.Error("Roundtrip mismatch")
 	}
 
-	// Test NewCompressor
+	// Test CompressNumeric - should work now!
+	numbers := []int64{1, 2, 3, 4, 5}
+	compressedNums, err := CompressNumeric(numbers)
+	if err != nil {
+		t.Fatalf("CompressNumeric failed: %v", err)
+	}
+	if len(compressedNums) == 0 {
+		t.Error("CompressNumeric returned empty data")
+	}
+
+	// Verify roundtrip
+	decompressedNums, err := DecompressNumeric[int64](compressedNums)
+	if err != nil {
+		t.Fatalf("DecompressNumeric failed: %v", err)
+	}
+	if len(decompressedNums) != len(numbers) {
+		t.Error("Numeric roundtrip length mismatch")
+	}
+
+	// Test NewCompressor - should still return error (context API not available)
 	_, err = NewCompressor()
 	if err == nil {
 		t.Error("NewCompressor should return error in Pure Go mode")
 	}
 
-	// Test NewWriter
+	// Test NewWriter - should still return error (streaming writer not available)
 	_, err = NewWriter(nil)
 	if err == nil {
 		t.Error("NewWriter should return error in Pure Go mode")
