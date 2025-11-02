@@ -21,7 +21,8 @@ func main() {
 
 	fmt.Println("=================================")
 	fmt.Println("OpenZL Frame Format Analyzer")
-	fmt.Println("=================================\n")
+	fmt.Println("=================================")
+	fmt.Println()
 
 	fmt.Printf("Frame size: %d bytes\n\n", len(data))
 
