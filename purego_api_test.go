@@ -9,6 +9,7 @@ package openzl
 import (
 	"bytes"
 	"encoding/binary"
+	"io"
 	"testing"
 
 	"github.com/boris-chu/go-openzl/internal/codec"
@@ -106,10 +107,42 @@ func TestPureGoCompressionWorks(t *testing.T) {
 		t.Error("NewCompressor should return error in Pure Go mode")
 	}
 
-	// Test NewWriter - should still return error (streaming writer not available)
-	_, err = NewWriter(nil)
-	if err == nil {
-		t.Error("NewWriter should return error in Pure Go mode")
+	// Test NewWriter - should work now in Pure Go mode!
+	buf := new(bytes.Buffer)
+	writer, err := NewWriter(buf)
+	if err != nil {
+		t.Fatalf("NewWriter failed: %v", err)
+	}
+
+	// Write some data
+	testData := []byte("streaming compression test")
+	n, err := writer.Write(testData)
+	if err != nil {
+		t.Fatalf("Writer.Write failed: %v", err)
+	}
+	if n != len(testData) {
+		t.Errorf("Writer.Write() n = %d, want %d", n, len(testData))
+	}
+
+	// Close to flush
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Writer.Close failed: %v", err)
+	}
+
+	// Verify data was written
+	if buf.Len() == 0 {
+		t.Error("NewWriter wrote no data")
+	}
+
+	// Verify roundtrip through Reader
+	reader, _ := NewReader(buf)
+	decompressedStream, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("Reader.ReadAll failed: %v", err)
+	}
+
+	if !bytes.Equal(decompressedStream, testData) {
+		t.Error("Writer→Reader roundtrip mismatch")
 	}
 }
 

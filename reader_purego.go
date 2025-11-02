@@ -9,22 +9,16 @@ package openzl
 import (
 	"fmt"
 	"io"
+
+	"github.com/boris-chu/go-openzl/purgo"
 )
 
-// Reader implements io.ReadCloser for streaming decompression.
+// Reader implements io.ReadCloser for streaming decompression using Pure Go.
 //
-// In Pure Go builds, Reader uses the purgo.Reader implementation internally.
-//
-// Example:
-//
-//	file, _ := os.Open("input.zl")
-//	reader, _ := openzl.NewReader(file)
-//	defer reader.Close()
-//
-//	// Decompress data as it's read
-//	io.Copy(destWriter, reader)
+// This is the Pure Go implementation that works without CGO. It provides
+// streaming decompression with the io.Reader interface.
 type Reader struct {
-	r io.Reader
+	impl *purgo.Reader
 }
 
 // NewReader creates a new Reader that reads compressed data from r and
@@ -52,22 +46,37 @@ type Reader struct {
 //	    log.Fatal(err)
 //	}
 func NewReader(r io.Reader) (*Reader, error) {
-	return nil, fmt.Errorf("streaming Reader requires CGO (use purgo.NewReader instead, or build with CGO_ENABLED=1)")
+	impl, err := purgo.NewReader(r)
+	if err != nil {
+		return nil, fmt.Errorf("create reader: %w", err)
+	}
+	return &Reader{impl: impl}, nil
 }
 
 // Read decompresses data from the underlying reader into p.
 //
-// Note: This function is not available in Pure Go builds. Use purgo.NewReader instead.
+// This implements the io.Reader interface.
 func (r *Reader) Read(p []byte) (n int, err error) {
-	return 0, fmt.Errorf("streaming Reader requires CGO (use purgo.NewReader instead, or build with CGO_ENABLED=1)")
+	if r.impl == nil {
+		return 0, fmt.Errorf("reader not initialized")
+	}
+	return r.impl.Read(p)
 }
 
 // Close releases resources associated with the Reader.
+//
+// If the underlying reader implements io.Closer, it will also be closed.
 func (r *Reader) Close() error {
-	return nil
+	if r.impl == nil {
+		return nil
+	}
+	return r.impl.Close()
 }
 
 // Reset resets the Reader to read from a new underlying reader.
+//
+// Note: Reset is not currently supported in Pure Go mode.
+// Create a new Reader instead.
 func (r *Reader) Reset(reader io.Reader) error {
-	return fmt.Errorf("streaming Reader requires CGO (use purgo.NewReader instead, or build with CGO_ENABLED=1)")
+	return fmt.Errorf("Reset not supported in Pure Go mode (create new Reader instead)")
 }
