@@ -191,12 +191,14 @@ func (r *Registry) IDs() []ID {
 // More codecs will be added as we implement them.
 func DefaultRegistry() *Registry {
 	reg := NewRegistry()
-	// Phase 2: Register codecs
+	// Phase 2: Register codecs (complete)
 	reg.Register(NewIdentity())
 	reg.Register(NewConstant(4)) // Default to 4-byte elements
 	reg.Register(NewDelta(8))    // Default to 8-byte (uint64) elements
 	reg.Register(NewZigZag(4))   // Default to 4-byte (int32) elements
-	// Future: reg.Register(NewBitpack()), etc.
+
+	// Phase 3 (Entropy Coding): FSE, Huffman, ANS, Range Coding
+	// Phase 5 (Advanced Codecs): Bitpack, Transpose, LZ, ROLZ, etc.
 	return reg
 }
 
