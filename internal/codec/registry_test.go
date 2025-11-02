@@ -131,6 +131,20 @@ func TestDefaultRegistry(t *testing.T) {
 	if n != len(input) {
 		t.Errorf("Decoded %d bytes, want %d", n, len(input))
 	}
+
+	// Should have Delta codec
+	if !reg.Has(IDDelta) {
+		t.Error("Default registry should have Delta codec")
+	}
+
+	deltaCodec, ok := reg.Get(IDDelta)
+	if !ok {
+		t.Fatal("Delta codec not found in default registry")
+	}
+
+	if deltaCodec.ID() != IDDelta {
+		t.Errorf("Got codec ID %d, want %d", deltaCodec.ID(), IDDelta)
+	}
 }
 
 // TestCodecID_String tests codec ID string representation

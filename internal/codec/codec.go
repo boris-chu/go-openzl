@@ -182,9 +182,10 @@ func (r *Registry) IDs() []ID {
 // More codecs will be added as we implement them.
 func DefaultRegistry() *Registry {
 	reg := NewRegistry()
-	// Phase 2: Register Identity codec
+	// Phase 2: Register codecs
 	reg.Register(NewIdentity())
-	// Future: reg.Register(NewDelta()), etc.
+	reg.Register(NewDelta(8)) // Default to 8-byte (uint64) elements
+	// Future: reg.Register(NewZigZag()), etc.
 	return reg
 }
 
