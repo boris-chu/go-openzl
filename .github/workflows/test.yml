@@ -104,11 +104,13 @@ jobs:
 
     - name: Run fuzz tests (short)
       run: |
-        go test -fuzz=FuzzCompress -fuzztime=10s
-        go test -fuzz=FuzzCompressor -fuzztime=10s
-        go test -fuzz=FuzzNumericInt64 -fuzztime=10s
-        go test -fuzz=FuzzWriter -fuzztime=10s
-        go test -fuzz=FuzzDecompress -fuzztime=10s
+        go test -fuzz=FuzzCompress -fuzztime=10s ./
+        go test -fuzz=FuzzCompressor -fuzztime=10s ./
+        go test -fuzz=FuzzNumericInt64 -fuzztime=10s ./
+        go test -fuzz=FuzzWriter -fuzztime=10s ./
+        go test -fuzz=FuzzDecompress -fuzztime=10s ./
+        go test -fuzz=FuzzParse -fuzztime=10s ./internal/frame/
+        go test -fuzz=FuzzVarint -fuzztime=10s ./internal/frame/
 
   lint:
     name: Lint
