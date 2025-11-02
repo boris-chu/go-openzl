@@ -210,6 +210,27 @@ func main() {
 }
 ```
 
+### Zero-Allocation API (Klaus Post Pattern)
+
+For maximum performance with zero allocations, use the CompressTo API:
+
+```go
+// Pre-allocate buffer once
+dst := make([]byte, openzl.CompressBound(maxMessageSize))
+
+// Process many messages with ZERO allocations!
+for _, msg := range messages {
+    n, err := compressor.CompressTo(dst, msg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    // Use dst[:n] - no allocation!
+    sendOverNetwork(dst[:n])
+}
+```
+
+**Performance**: 0 B/op, 0 allocs/op (175k ops/sec, 159 MB/s)
+
 ### Typed Compression (Phase 3)
 
 OpenZL excels at compressing typed data - achieving 2-50x better compression ratios:
@@ -331,9 +352,12 @@ go test -bench=. -benchmem
 
 ## Documentation
 
-- [API Documentation](https://pkg.go.dev/github.com/yourusername/go-openzl) (Coming soon)
-- [Examples](examples/) (Coming soon)
-- [Performance Guide](PERFORMANCE.md) (Coming soon)
+- **[API Documentation](https://pkg.go.dev/github.com/boris-chu/go-openzl)** - Full godoc reference
+- **[Migration Guide](documentation/MIGRATION_GUIDE.md)** - Migrate from gzip/zstd to OpenZL
+- **[Klaus Post Improvements](documentation/KLAUS_POST_IMPROVEMENTS.md)** - Zero-allocation optimizations
+- **[Benchmarks](documentation/BENCHMARKS.md)** - Performance comparisons vs gzip/zstd
+- **[Testing Results](documentation/TESTING.md)** - Comprehensive test coverage
+- **[Examples](examples/)** - Working code examples
 
 ### Upstream Documentation
 
@@ -694,20 +718,6 @@ Which advanced features would be most valuable to you?
 - Vote on feature requests with 👍 reactions
 
 Your input helps us prioritize development!
-
-## Pure Go Migration
-
-We're planning a **pure Go implementation** to eliminate CGO dependency! This is a massive undertaking (18-month timeline) that will:
-- Remove CGO requirement for easier cross-compilation
-- Provide full control over optimizations
-- Potentially achieve better performance than C
-- Build on Klaus Post's Go compression expertise
-
-See [docs/PURE_GO_MIGRATION_PLAN.md](docs/PURE_GO_MIGRATION_PLAN.md) for the complete 7-phase roadmap.
-
-**Timeline**: 18 months | **Phases**: 0-7 | **Strategy**: Dual implementation (CGO + Pure Go)
-
-Interested in contributing? This is an ambitious project and we'd love your help!
 
 ## License
 

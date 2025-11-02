@@ -180,16 +180,22 @@ io.Copy(destWriter, reader)
 
 ### Performance
 - ✅ Comprehensive benchmarks vs gzip/zstd
-- ✅ Performance comparison document (BENCHMARKS.md)
+- ✅ Performance comparison document (documentation/BENCHMARKS.md)
 - ✅ PDF compression example (real-world usage)
 - ✅ All benchmarks passing
+- ✅ Klaus Post-inspired zero-allocation API
+  - `CompressTo()` with user-provided buffers (0 B/op, 0 allocs/op)
+  - Buffer pooling with `sync.Pool` for automatic buffer reuse
+  - `CompressBound()` helper for buffer sizing
+  - 175k ops/sec, 159 MB/s with zero allocations
 
 ### Documentation
 - ✅ Complete godoc for all exports (100% coverage - 29 symbols)
-- ✅ Migration guide from gzip/zstd (MIGRATION_GUIDE.md)
+- ✅ Migration guide from gzip/zstd (documentation/MIGRATION_GUIDE.md)
+- ✅ Klaus Post improvements (documentation/KLAUS_POST_IMPROVEMENTS.md)
 - ✅ Comprehensive README with examples
 - ✅ API comparison with C++/Python (internal docs)
-- ✅ Testing documentation (TESTING.md)
+- ✅ Testing documentation (documentation/TESTING.md)
 
 ### Platform Support
 - ✅ Linux (amd64, arm64) - Tested in CI
