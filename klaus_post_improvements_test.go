@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Boris Chu and contributors
 // SPDX-License-Identifier: BSD-3-Clause
 
+//go:build cgo
+
 package openzl_test
 
 import (
