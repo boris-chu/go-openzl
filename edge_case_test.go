@@ -59,23 +59,23 @@ func TestReader_TruncatedFrame(t *testing.T) {
 // TestReader_InvalidFrameHeader tests handling of invalid frame headers
 func TestReader_InvalidFrameHeader(t *testing.T) {
 	tests := []struct {
-		name   string
-		data   []byte
+		name        string
+		data        []byte
 		expectError bool
 	}{
 		{
-			name:   "huge_size",
-			data:   []byte{0xFF, 0xFF, 0xFF, 0x7F}, // Large but valid size
+			name:        "huge_size",
+			data:        []byte{0xFF, 0xFF, 0xFF, 0x7F}, // Large but valid size
 			expectError: true,
 		},
 		{
-			name:   "random_bytes",
-			data:   []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC},
+			name:        "random_bytes",
+			data:        []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC},
 			expectError: true,
 		},
 		{
-			name:   "truncated_header",
-			data:   []byte{0x10, 0x00}, // Only 2 bytes
+			name:        "truncated_header",
+			data:        []byte{0x10, 0x00}, // Only 2 bytes
 			expectError: true,
 		},
 	}
@@ -301,9 +301,9 @@ func (rr *repeatingReader) Read(p []byte) (n int, err error) {
 // TestDecompress_ErrorMessages tests that error messages are informative
 func TestDecompress_ErrorMessages(t *testing.T) {
 	tests := []struct {
-		name        string
-		input       []byte
-		shouldError bool
+		name          string
+		input         []byte
+		shouldError   bool
 		errorContains string
 	}{
 		{

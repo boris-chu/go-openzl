@@ -58,7 +58,7 @@ func CompressNumeric[T Numeric](data []T) ([]byte, error) {
 
 	// Allocate destination buffer
 	// TypedRef compression may need more space than CompressBound for raw bytes
-	srcSize := len(data) * int(tref.ElementSize())
+	srcSize := len(data) * tref.ElementSize()
 	dstSize := cgo.CompressBound(srcSize) * 2 // Extra margin for typed compression
 	dst := make([]byte, dstSize)
 
@@ -149,7 +149,7 @@ func CompressorCompressNumeric[T Numeric](c *Compressor, data []T) ([]byte, erro
 	defer c.mu.Unlock()
 
 	// Allocate destination buffer
-	srcSize := len(data) * int(tref.ElementSize())
+	srcSize := len(data) * tref.ElementSize()
 	dstSize := cgo.CompressBound(srcSize) * 2
 	dst := make([]byte, dstSize)
 

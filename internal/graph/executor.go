@@ -80,7 +80,10 @@ func (e *Executor) Execute(graph *Graph, compressedData []byte, outputSizes []ui
 }
 
 // executeNode executes a single node in the graph
-func (e *Executor) executeNode(node *Node, nodeIdx int, compressedData []byte, nodeOutputs [][]byte, outputSizes []uint64, graphOutputs []int) ([]byte, error) {
+func (e *Executor) executeNode(
+	node *Node, nodeIdx int, compressedData []byte,
+	nodeOutputs [][]byte, outputSizes []uint64, graphOutputs []int,
+) ([]byte, error) {
 	// Look up codec
 	codec, ok := e.registry.Get(node.CodecID)
 	if !ok {

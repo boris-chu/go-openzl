@@ -298,4 +298,3 @@ func TestTypedVsUntypedCompression(t *testing.T) {
 		}
 	}
 }
-

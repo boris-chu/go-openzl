@@ -79,8 +79,7 @@ func writeVarint(w io.Writer, value uint64) error {
 
 // readU8 reads an unsigned 8-bit integer
 func readU8(r io.Reader) (uint8, error) {
-	b, err := readByte(r)
-	return uint8(b), err
+	return readByte(r)
 }
 
 // readU32LE reads an unsigned 32-bit integer (little-endian)
