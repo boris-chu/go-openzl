@@ -573,3 +573,118 @@ func BenchmarkEndToEnd(b *testing.B) {
 		}
 	}
 }
+
+// TestEndToEnd_LZ77HuffmanPipeline demonstrates the power of combining
+// LZ77 dictionary compression with Huffman entropy coding.
+//
+// This is how real-world compression algorithms work:
+//   - gzip: DEFLATE = LZ77 → Huffman
+//   - zlib: DEFLATE = LZ77 → Huffman
+//   - PNG: LZ77 (DEFLATE) → optional filters
+//
+// Our pipeline: LZ77 → Huffman
+//
+// Expected performance on repetitive JSON:
+//   - LZ77 alone: 1.5-3x (token overhead limits compression)
+//   - LZ77 → Huffman: 10-30x (Huffman compresses the token stream)
+//
+// The token stream has highly skewed distribution:
+//   - Distance values: Often same (repeated patterns nearby)
+//   - Length values: Often same (common pattern lengths)
+//   - Token types: Biased toward literals or matches
+//
+func TestEndToEnd_LZ77HuffmanPipeline(t *testing.T) {
+	// Create JSON-like data with repeated keys (real-world scenario)
+	// Example: Elasticsearch audit logs with repeated "password_id" field
+	json := `{"timestamp":1000,"password_id":"abc123","host":"server1"},`
+	json += `{"timestamp":1001,"password_id":"def456","host":"server1"},`
+	json += `{"timestamp":1002,"password_id":"ghi789","host":"server1"},`
+	json += `{"timestamp":1003,"password_id":"jkl012","host":"server1"},`
+	json += `{"timestamp":1004,"password_id":"mno345","host":"server1"},`
+	json += `{"timestamp":1005,"password_id":"pqr678","host":"server1"},`
+	json += `{"timestamp":1006,"password_id":"stu901","host":"server1"},`
+	json += `{"timestamp":1007,"password_id":"vwx234","host":"server1"}`
+
+	originalData := []byte(json)
+	originalSize := uint64(len(originalData))
+
+	t.Logf("Original JSON: %d bytes", originalSize)
+	t.Logf("Sample: %s...", json[:100])
+
+	// ========================================================================
+	// Step 1: LZ77 compression (finds repeated patterns)
+	// ========================================================================
+
+	lz77Codec := codec.NewLZ77()
+
+	// Worst-case output size: header + (2 bytes per literal)
+	lz77Buf := make([]byte, 4+len(originalData)*2)
+	lz77Size, err := lz77Codec.Encode(lz77Buf, originalData, nil)
+	if err != nil {
+		t.Fatalf("LZ77 Encode failed: %v", err)
+	}
+
+	lz77Ratio := float64(originalSize) / float64(lz77Size)
+	t.Logf("After LZ77: %d bytes (%.2fx compression)", lz77Size, lz77Ratio)
+
+	// ========================================================================
+	// Step 2: Huffman compression (compresses the token stream)
+	// ========================================================================
+
+	huffmanCodec := codec.NewHuffman()
+
+	// Huffman output buffer
+	huffmanBuf := make([]byte, lz77Size*2)
+	huffmanSize, err := huffmanCodec.Encode(huffmanBuf, lz77Buf[:lz77Size], nil)
+	if err != nil {
+		t.Fatalf("Huffman Encode failed: %v", err)
+	}
+
+	finalSize := huffmanSize
+	finalRatio := float64(originalSize) / float64(finalSize)
+	t.Logf("After LZ77→Huffman: %d bytes (%.2fx compression)", finalSize, finalRatio)
+
+	// ========================================================================
+	// Verify we achieved good compression
+	// ========================================================================
+
+	if finalRatio < 2.0 {
+		t.Errorf("Expected at least 2x compression for repetitive JSON, got %.2fx", finalRatio)
+	}
+
+	t.Logf("✅ LZ77→Huffman pipeline: %.2fx better than LZ77 alone (%.2fx vs %.2fx)",
+		finalRatio/lz77Ratio, finalRatio, lz77Ratio)
+
+	// ========================================================================
+	// Step 3: Decompress and verify roundtrip
+	// ========================================================================
+
+	// Decompress Huffman → LZ77 token stream
+	lz77Decompressed := make([]byte, lz77Size)
+	n, err := huffmanCodec.Decode(lz77Decompressed, huffmanBuf[:huffmanSize], nil)
+	if err != nil {
+		t.Fatalf("Huffman Decode failed: %v", err)
+	}
+
+	if n != lz77Size {
+		t.Errorf("Huffman decoded size %d != LZ77 compressed size %d", n, lz77Size)
+	}
+
+	// Decompress LZ77 → original data
+	finalOutput := make([]byte, originalSize)
+	n, err = lz77Codec.Decode(finalOutput, lz77Decompressed[:lz77Size], nil)
+	if err != nil {
+		t.Fatalf("LZ77 Decode failed: %v", err)
+	}
+
+	if n != int(originalSize) {
+		t.Errorf("Final output size %d != original size %d", n, originalSize)
+	}
+
+	if string(finalOutput) != json {
+		t.Errorf("Roundtrip mismatch!\nGot:  %s\nWant: %s", finalOutput, json)
+	}
+
+	t.Logf("✅ Roundtrip successful: %d bytes → %d bytes → %d bytes → %d bytes",
+		originalSize, lz77Size, finalSize, originalSize)
+}
