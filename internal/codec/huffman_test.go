@@ -333,22 +333,36 @@ func TestHuffman_AllZeros(t *testing.T) {
 	t.Error("Expected error for all-zeros data, got nil")
 }
 
-// TestHuffman_EncodeNotImplemented verifies encode returns error
-func TestHuffman_EncodeNotImplemented(t *testing.T) {
+// TestHuffman_EncodeRoundtrip verifies that Encode/Decode work correctly.
+func TestHuffman_EncodeRoundtrip(t *testing.T) {
 	codec := NewHuffman()
 
-	src := []byte("test data")
-	dst := make([]byte, 100)
+	src := []byte("test data with some repeated characters aaaa bbbb cccc")
+	dst := make([]byte, len(src)*2) // Plenty of space
 
-	_, err := codec.Encode(dst, src, nil)
-	if err == nil {
-		t.Error("expected error for encode, got nil")
+	// Encode
+	compressed, err := codec.Encode(dst, src, nil)
+	if err != nil {
+		t.Fatalf("Encode failed: %v", err)
 	}
 
-	if err.Error() != "huffman encode not yet implemented (decompression only in Phase 3)" {
-		t.Errorf("unexpected error message: %v", err)
+	t.Logf("Huffman: %d bytes → %d bytes (%.2fx ratio)",
+		len(src), compressed, float64(len(src))/float64(compressed))
+
+	// Decode
+	output := make([]byte, len(src))
+	n, err := codec.Decode(output, dst[:compressed], nil)
+	if err != nil {
+		t.Fatalf("Decode failed: %v", err)
 	}
-	t.Logf("Encode correctly returns error: %v", err)
+
+	if n != len(src) {
+		t.Errorf("decoded size %d != original size %d", n, len(src))
+	}
+
+	if string(output[:n]) != string(src) {
+		t.Errorf("roundtrip mismatch:\nGot:  %q\nWant: %q", output[:n], src)
+	}
 }
 
 // BenchmarkHuffman_Decode benchmarks Huffman decompression
