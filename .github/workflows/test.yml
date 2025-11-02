@@ -55,13 +55,13 @@ jobs:
       run: go mod verify
 
     - name: Build
-      run: go build -v ./...
+      run: go build -v -mod=mod ./...
 
     - name: Run tests
-      run: go test -v -race -timeout 10m ./...
+      run: go test -v -race -timeout 10m -mod=mod ./...
 
     - name: Run tests with coverage
-      run: go test -v -race -coverprofile=coverage.out -covermode=atomic -timeout 10m ./...
+      run: go test -v -race -coverprofile=coverage.out -covermode=atomic -timeout 10m -mod=mod ./...
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -104,13 +104,13 @@ jobs:
 
     - name: Run fuzz tests (short)
       run: |
-        go test -fuzz=FuzzCompress -fuzztime=10s ./
-        go test -fuzz=FuzzCompressor -fuzztime=10s ./
-        go test -fuzz=FuzzNumericInt64 -fuzztime=10s ./
-        go test -fuzz=FuzzWriter -fuzztime=10s ./
-        go test -fuzz=FuzzDecompress -fuzztime=10s ./
-        go test -fuzz=FuzzParse -fuzztime=10s ./internal/frame/
-        go test -fuzz=FuzzVarint -fuzztime=10s ./internal/frame/
+        go test -mod=mod -fuzz=FuzzCompress -fuzztime=10s ./
+        go test -mod=mod -fuzz=FuzzCompressor -fuzztime=10s ./
+        go test -mod=mod -fuzz=FuzzNumericInt64 -fuzztime=10s ./
+        go test -mod=mod -fuzz=FuzzWriter -fuzztime=10s ./
+        go test -mod=mod -fuzz=FuzzDecompress -fuzztime=10s ./
+        go test -mod=mod -fuzz=FuzzParse -fuzztime=10s ./internal/frame/
+        go test -mod=mod -fuzz=FuzzVarint -fuzztime=10s ./internal/frame/
 
   lint:
     name: Lint
@@ -177,4 +177,4 @@ jobs:
         find /tmp/openzl-build/deps/zstd -name "libzstd.a" -exec cp {} vendor/openzl/lib/ \;
 
     - name: Run benchmarks
-      run: go test -bench=. -benchmem -run=^$ -benchtime=500ms ./...
+      run: go test -mod=mod -bench=. -benchmem -run=^$ -benchtime=500ms ./...
