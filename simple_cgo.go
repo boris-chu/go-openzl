@@ -9,7 +9,7 @@ package openzl
 import (
 	"fmt"
 
-	"github.com/borischu/go-openzl/internal/cgo"
+	"github.com/boris-chu/go-openzl/internal/cgo"
 )
 
 // Compress compresses the input data using OpenZL with default settings.

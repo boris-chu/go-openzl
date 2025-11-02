@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/borischu/go-openzl"
+	"github.com/boris-chu/go-openzl"
 )
 
 // TestCompressTo validates the Klaus Post-inspired user-buffer API

@@ -3,7 +3,7 @@ package graph
 import (
 	"testing"
 
-	"github.com/borischu/go-openzl/internal/codec"
+	"github.com/boris-chu/go-openzl/internal/codec"
 )
 
 // TestGraph_Validate tests graph validation

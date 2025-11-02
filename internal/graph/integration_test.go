@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/borischu/go-openzl/internal/codec"
-	"github.com/borischu/go-openzl/internal/frame"
+	"github.com/boris-chu/go-openzl/internal/codec"
+	"github.com/boris-chu/go-openzl/internal/frame"
 )
 
 // TestEndToEnd_IdentityCodec tests complete decompression flow with Identity codec

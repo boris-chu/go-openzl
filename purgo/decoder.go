@@ -28,9 +28,9 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/borischu/go-openzl/internal/codec"
-	"github.com/borischu/go-openzl/internal/frame"
-	"github.com/borischu/go-openzl/internal/graph"
+	"github.com/boris-chu/go-openzl/internal/codec"
+	"github.com/boris-chu/go-openzl/internal/frame"
+	"github.com/boris-chu/go-openzl/internal/graph"
 )
 
 // Decompress decompresses OpenZL data to raw bytes using Pure Go decoder.

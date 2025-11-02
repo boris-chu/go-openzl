@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/borischu/go-openzl/internal/codec"
+	"github.com/boris-chu/go-openzl/internal/codec"
 )
 
 // TestEncodeGraph_Simple tests encoding a simple graph

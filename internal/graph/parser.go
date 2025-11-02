@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/borischu/go-openzl/internal/codec"
+	"github.com/boris-chu/go-openzl/internal/codec"
 )
 
 // Parser reads compression graphs from OpenZL frame payloads.

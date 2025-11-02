@@ -11,7 +11,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/borischu/go-openzl/purgo"
+	"github.com/boris-chu/go-openzl/purgo"
 )
 
 // Numeric is a constraint that permits all numeric types that OpenZL supports.

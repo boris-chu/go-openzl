@@ -9,7 +9,7 @@ package openzl
 import (
 	"fmt"
 
-	"github.com/borischu/go-openzl/internal/cgo"
+	"github.com/boris-chu/go-openzl/internal/cgo"
 )
 
 // Numeric is a constraint that permits all numeric types that OpenZL supports.

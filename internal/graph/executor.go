@@ -3,7 +3,7 @@ package graph
 import (
 	"fmt"
 
-	"github.com/borischu/go-openzl/internal/codec"
+	"github.com/boris-chu/go-openzl/internal/codec"
 )
 
 // Executor executes a compression graph to decompress data.

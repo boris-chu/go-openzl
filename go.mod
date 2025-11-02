@@ -1,4 +1,4 @@
-module github.com/borischu/go-openzl
+module github.com/boris-chu/go-openzl
 
 go 1.24.4
 

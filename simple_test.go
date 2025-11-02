@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/borischu/go-openzl"
+	"github.com/boris-chu/go-openzl"
 )
 
 func TestCompressDecompress(t *testing.T) {

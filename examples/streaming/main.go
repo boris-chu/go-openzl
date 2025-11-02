@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/borischu/go-openzl"
+	"github.com/boris-chu/go-openzl"
 )
 
 func main() {

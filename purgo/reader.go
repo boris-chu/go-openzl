@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/borischu/go-openzl/internal/codec"
-	"github.com/borischu/go-openzl/internal/frame"
-	"github.com/borischu/go-openzl/internal/graph"
+	"github.com/boris-chu/go-openzl/internal/codec"
+	"github.com/boris-chu/go-openzl/internal/frame"
+	"github.com/boris-chu/go-openzl/internal/graph"
 )
 
 // Reader provides streaming decompression using the io.Reader interface.

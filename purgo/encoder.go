@@ -6,9 +6,9 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/borischu/go-openzl/internal/codec"
-	"github.com/borischu/go-openzl/internal/frame"
-	"github.com/borischu/go-openzl/internal/graph"
+	"github.com/boris-chu/go-openzl/internal/codec"
+	"github.com/boris-chu/go-openzl/internal/frame"
+	"github.com/boris-chu/go-openzl/internal/graph"
 )
 
 // Compress compresses data using Pure Go OpenZL encoder with Huffman coding.

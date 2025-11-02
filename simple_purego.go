@@ -9,7 +9,7 @@ package openzl
 import (
 	"fmt"
 
-	"github.com/borischu/go-openzl/purgo"
+	"github.com/boris-chu/go-openzl/purgo"
 )
 
 // Compress compresses the input data using Pure Go OpenZL encoder.

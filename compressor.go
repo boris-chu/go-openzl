@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/borischu/go-openzl/internal/cgo"
+	"github.com/boris-chu/go-openzl/internal/cgo"
 )
 
 // bufferPool provides reusable compression buffers (Klaus Post pattern).

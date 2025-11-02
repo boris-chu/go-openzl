@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/borischu/go-openzl/internal/codec"
+	"github.com/boris-chu/go-openzl/internal/codec"
 )
 
 // TestExecutor_SimpleIdentity tests executing a simple Identity codec graph
