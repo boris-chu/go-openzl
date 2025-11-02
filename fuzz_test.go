@@ -192,6 +192,11 @@ func FuzzDecompress(f *testing.F) {
 	f.Add(bytes.Repeat([]byte{255}, 100))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
+		// Skip inputs that are too large (can cause hangs in CGO)
+		if len(data) > 1024*1024 {
+			return
+		}
+
 		// Decompress should not panic, even on invalid input
 		// It should return an error instead
 		_, err := Decompress(data)

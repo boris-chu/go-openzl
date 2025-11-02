@@ -24,6 +24,10 @@ import (
 	"github.com/borischu/go-openzl/internal/codec"
 )
 
+const (
+	nilGraphString = "<nil graph>"
+)
+
 // Node represents a single codec transformation in the graph.
 //
 // Each node has:
@@ -141,7 +145,7 @@ func (n *Node) InputCount() int {
 // String returns a human-readable representation of the graph
 func (g *Graph) String() string {
 	if g == nil {
-		return "<nil graph>"
+		return nilGraphString
 	}
 
 	result := fmt.Sprintf("Graph{Nodes: %d, Outputs: %v}\n", len(g.Nodes), g.Outputs)

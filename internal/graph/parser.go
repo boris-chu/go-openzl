@@ -238,46 +238,49 @@ func EncodeGraph(g *Graph) ([]byte, error) {
 	var buf bytes.Buffer
 
 	// Write number of nodes
-	writeVarint(&buf, uint64(len(g.Nodes)))
+	_ = writeVarint(&buf, uint64(len(g.Nodes))) // bytes.Buffer never fails
 
 	// Write each node
 	for _, node := range g.Nodes {
 		// Codec ID
-		writeVarint(&buf, uint64(node.CodecID))
+		_ = writeVarint(&buf, uint64(node.CodecID))
 
 		// Params
-		writeVarint(&buf, uint64(len(node.Params)))
+		_ = writeVarint(&buf, uint64(len(node.Params)))
 		buf.Write(node.Params)
 
 		// Inputs
-		writeVarint(&buf, uint64(len(node.Inputs)))
+		_ = writeVarint(&buf, uint64(len(node.Inputs)))
 		for _, inputIdx := range node.Inputs {
-			writeVarint(&buf, uint64(inputIdx))
+			_ = writeVarint(&buf, uint64(inputIdx))
 		}
 	}
 
 	// Write outputs
-	writeVarint(&buf, uint64(len(g.Outputs)))
+	_ = writeVarint(&buf, uint64(len(g.Outputs)))
 	for _, outIdx := range g.Outputs {
-		writeVarint(&buf, uint64(outIdx))
+		_ = writeVarint(&buf, uint64(outIdx))
 	}
 
 	return buf.Bytes(), nil
 }
 
 // writeVarint writes a LEB128 varint to the buffer
-func writeVarint(w io.ByteWriter, value uint64) {
+func writeVarint(w io.ByteWriter, value uint64) error {
 	for {
 		b := byte(value & 0x7F)
 		value >>= 7
 		if value != 0 {
 			b |= 0x80
 		}
-		w.WriteByte(b)
+		if err := w.WriteByte(b); err != nil {
+			return err
+		}
 		if value == 0 {
 			break
 		}
 	}
+	return nil
 }
 
 // DecodeU16LE decodes a little-endian uint16

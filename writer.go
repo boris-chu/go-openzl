@@ -26,13 +26,13 @@ import (
 // Important: You must call Close() to flush any buffered data and ensure
 // all compressed data is written to the underlying writer.
 type Writer struct {
-	w          io.Writer     // Underlying writer for compressed data
-	compressor *Compressor   // Reusable compressor context
-	buf        []byte        // Buffer for incoming uncompressed data
-	bufSize    int           // Current amount of data in buffer
-	frameSize  int           // Size of each compression frame (default 64KB)
-	closed     bool          // Whether Close() has been called
-	err        error         // Sticky error from previous operations
+	w          io.Writer   // Underlying writer for compressed data
+	compressor *Compressor // Reusable compressor context
+	buf        []byte      // Buffer for incoming uncompressed data
+	bufSize    int         // Current amount of data in buffer
+	frameSize  int         // Size of each compression frame (default 64KB)
+	closed     bool        // Whether Close() has been called
+	err        error       // Sticky error from previous operations
 }
 
 const (

@@ -38,8 +38,8 @@ import (
 //		// Use decompressed data...
 //	}
 type Decompressor struct {
-	mu  sync.Mutex   // Protects ctx for thread safety
-	ctx *cgo.DCtx    // Underlying decompression context
+	mu  sync.Mutex // Protects ctx for thread safety
+	ctx *cgo.DCtx  // Underlying decompression context
 }
 
 // NewDecompressor creates a new reusable Decompressor.

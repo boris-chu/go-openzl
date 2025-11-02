@@ -299,38 +299,3 @@ func TestTypedVsUntypedCompression(t *testing.T) {
 	}
 }
 
-// Helper to convert slice to bytes for comparison
-func int64SliceToBytes(data []int64) []byte {
-	buf := make([]byte, len(data)*8)
-	for i, v := range data {
-		offset := i * 8
-		buf[offset+0] = byte(v >> 0)
-		buf[offset+1] = byte(v >> 8)
-		buf[offset+2] = byte(v >> 16)
-		buf[offset+3] = byte(v >> 24)
-		buf[offset+4] = byte(v >> 32)
-		buf[offset+5] = byte(v >> 40)
-		buf[offset+6] = byte(v >> 48)
-		buf[offset+7] = byte(v >> 56)
-	}
-	return buf
-}
-
-func bytesToInt64Slice(buf []byte) []int64 {
-	if len(buf)%8 != 0 {
-		return nil
-	}
-	result := make([]int64, len(buf)/8)
-	for i := range result {
-		offset := i * 8
-		result[i] = int64(buf[offset+0]) |
-			int64(buf[offset+1])<<8 |
-			int64(buf[offset+2])<<16 |
-			int64(buf[offset+3])<<24 |
-			int64(buf[offset+4])<<32 |
-			int64(buf[offset+5])<<40 |
-			int64(buf[offset+6])<<48 |
-			int64(buf[offset+7])<<56
-	}
-	return result
-}

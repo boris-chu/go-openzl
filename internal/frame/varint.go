@@ -83,19 +83,6 @@ func readU8(r io.Reader) (uint8, error) {
 	return uint8(b), err
 }
 
-// readU16LE reads an unsigned 16-bit integer (little-endian)
-func readU16LE(r io.Reader) (uint16, error) {
-	var buf [2]byte
-	_, err := io.ReadFull(r, buf[:])
-	if err != nil {
-		if err == io.EOF {
-			return 0, ErrUnexpectedEOF
-		}
-		return 0, err
-	}
-	return binary.LittleEndian.Uint16(buf[:]), nil
-}
-
 // readU32LE reads an unsigned 32-bit integer (little-endian)
 func readU32LE(r io.Reader) (uint32, error) {
 	var buf [4]byte
@@ -107,47 +94,4 @@ func readU32LE(r io.Reader) (uint32, error) {
 		return 0, err
 	}
 	return binary.LittleEndian.Uint32(buf[:]), nil
-}
-
-// readU64LE reads an unsigned 64-bit integer (little-endian)
-func readU64LE(r io.Reader) (uint64, error) {
-	var buf [8]byte
-	_, err := io.ReadFull(r, buf[:])
-	if err != nil {
-		if err == io.EOF {
-			return 0, ErrUnexpectedEOF
-		}
-		return 0, err
-	}
-	return binary.LittleEndian.Uint64(buf[:]), nil
-}
-
-// writeU8 writes an unsigned 8-bit integer
-func writeU8(w io.Writer, value uint8) error {
-	_, err := w.Write([]byte{value})
-	return err
-}
-
-// writeU16LE writes an unsigned 16-bit integer (little-endian)
-func writeU16LE(w io.Writer, value uint16) error {
-	var buf [2]byte
-	binary.LittleEndian.PutUint16(buf[:], value)
-	_, err := w.Write(buf[:])
-	return err
-}
-
-// writeU32LE writes an unsigned 32-bit integer (little-endian)
-func writeU32LE(w io.Writer, value uint32) error {
-	var buf [4]byte
-	binary.LittleEndian.PutUint32(buf[:], value)
-	_, err := w.Write(buf[:])
-	return err
-}
-
-// writeU64LE writes an unsigned 64-bit integer (little-endian)
-func writeU64LE(w io.Writer, value uint64) error {
-	var buf [8]byte
-	binary.LittleEndian.PutUint64(buf[:], value)
-	_, err := w.Write(buf[:])
-	return err
 }

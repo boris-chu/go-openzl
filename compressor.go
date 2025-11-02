@@ -47,9 +47,9 @@ var bufferPool = sync.Pool{
 //		// Use compressed data...
 //	}
 type Compressor struct {
-	mu  sync.Mutex   // Protects ctx for thread safety
-	ctx *cgo.CCtx    // Underlying compression context
-	cfg *config      // Configuration options
+	mu  sync.Mutex // Protects ctx for thread safety
+	ctx *cgo.CCtx  // Underlying compression context
+	cfg *config    // Configuration options
 }
 
 // CompressorOption configures a Compressor during creation.

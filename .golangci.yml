@@ -9,7 +9,7 @@ linters-settings:
     threshold: 100
   goconst:
     min-len: 2
-    min-occurrences: 2
+    min-occurrences: 4  # Increase threshold to avoid noise
   misspell:
     locale: US
   lll:
@@ -28,6 +28,9 @@ linters-settings:
       - ifElseChain
       - octalLiteral
       - whyNoLint
+      - appendAssign  # False positives with append(a, b...)
+      - builtinShadowDecl  # Allow min/max helpers in tests
+      - unnamedResult  # Allow unnamed results for simple functions
 
 linters:
   disable-all: true
@@ -70,10 +73,30 @@ issues:
         - dupl
         - gosec
         - lll
+        - govet  # Allow fieldalignment issues in test structs
+        - unconvert  # Allow unnecessary conversions in tests for clarity
     - path: internal/cgo/
       linters:
         - all
       text: "CGO"
+    - path: test/tools/
+      linters:
+        - all  # Ignore linter issues in utility tools
+    - linters:
+        - govet
+      text: "fieldalignment"  # Disable fieldalignment globally (micro-optimization)
+    - linters:
+        - govet
+      text: "unusedwrite"  # Allow unused struct field writes (test setup)
+    - linters:
+        - gosec
+      text: "G115"  # Allow integer conversions (checked at runtime)
+    - linters:
+        - staticcheck
+      text: "SA6002"  # Allow value copies (not performance critical)
+    - linters:
+        - staticcheck
+      text: "SA9003"  # Allow empty branches (fuzz test error handling)
 
 run:
   timeout: 5m

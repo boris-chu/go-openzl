@@ -478,7 +478,7 @@ func TestWriteVarint(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			writeVarint(&buf, tt.value)
+			_ = writeVarint(&buf, tt.value) // bytes.Buffer never fails
 
 			// Read it back
 			got, err := readVarint(&buf)

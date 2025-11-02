@@ -104,9 +104,9 @@ func (c *Delta) decode8(dst, src []byte, numElements int) (int, error) {
 	var prev uint8
 
 	for i := 0; i < numElements; i++ {
-		delta := uint8(src[i])
+		delta := src[i]
 		value := prev + delta
-		dst[i] = byte(value)
+		dst[i] = value
 		prev = value
 	}
 
@@ -213,9 +213,9 @@ func (c *Delta) encode8(dst, src []byte, numElements int) (int, error) {
 	var prev uint8
 
 	for i := 0; i < numElements; i++ {
-		value := uint8(src[i])
+		value := src[i]
 		delta := value - prev
-		dst[i] = byte(delta)
+		dst[i] = delta
 		prev = value
 	}
 

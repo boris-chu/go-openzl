@@ -11,6 +11,15 @@ import (
 	"io"
 )
 
+// Codec name constants
+const (
+	nameIdentity = "Identity"
+	nameConstant = "Constant"
+	nameDelta    = "Delta"
+	nameZigZag   = "ZigZag"
+	nameBitpack  = "Bitpack"
+)
+
 // Codec is the interface all OpenZL codecs must implement.
 //
 // A codec transforms data from one representation to another. During compression,
@@ -96,15 +105,15 @@ const (
 func (id ID) String() string {
 	switch id {
 	case IDIdentity:
-		return "Identity"
+		return nameIdentity
 	case IDConstant:
-		return "Constant"
+		return nameConstant
 	case IDDelta:
-		return "Delta"
+		return nameDelta
 	case IDZigZag:
-		return "ZigZag"
+		return nameZigZag
 	case IDBitpack:
-		return "Bitpack"
+		return nameBitpack
 	case IDTranspose:
 		return "Transpose"
 	case IDQuantize:
