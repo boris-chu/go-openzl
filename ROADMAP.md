@@ -350,7 +350,7 @@ Chain multiple transforms for specialized compression.
 | v2.0.0 | 6 months | Q3 2026 | Hybrid (CGO + Pure Go) 🔬 |
 | v3.0.0 | 18 months | Q1 2027 | Pure Go Default 🚀 |
 
-**Note**: See [docs/PURE_GO_MIGRATION_PLAN.md](docs/PURE_GO_MIGRATION_PLAN.md) for the detailed pure Go migration roadmap.
+**Note**: Pure Go migration plan is in active development. See [issues](https://github.com/boris-chu/go-openzl/issues) and [discussions](https://github.com/boris-chu/go-openzl/discussions) for latest updates.
 
 ---
 
