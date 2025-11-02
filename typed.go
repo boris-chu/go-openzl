@@ -1,3 +1,6 @@
+//go:build cgo
+// +build cgo
+
 // Copyright (c) 2025 Boris Chu and contributors
 // SPDX-License-Identifier: BSD-3-Clause
 
