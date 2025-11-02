@@ -119,9 +119,9 @@ This project is in active development:
 - ✅ **Codec Framework** (Phase 2 Complete)
   - Codec interface with Decode/Encode methods
   - Registry system for codec lookup
-  - **5 codecs implemented**: Identity, Constant, Delta, ZigZag, Bitpack
-  - 122 codec tests (100% passing)
-  - 2-125 GB/s performance range
+  - **7 codecs implemented**: Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman
+  - 149 codec tests (100% passing)
+  - 283 MB/s - 125 GB/s performance range
 
 - ✅ **Graph Executor** (Phase 2 Complete)
   - Compression graph parser (varint-based binary format)
@@ -152,14 +152,19 @@ outputs, _ := executor.Execute(parsedGraph,
 // outputs[0] contains decompressed data!
 ```
 
-**Next Steps (Phase 3 - Entropy Coding)**:
-- ✅ Delta codec (real compression) - COMPLETE
-- ✅ ZigZag codec (signed integer handling) - COMPLETE
-- ✅ Bitpack codec (minimal bit packing) - COMPLETE
-- ✅ Constant codec (extreme compression for identical values) - COMPLETE
-- ✅ Identity codec (passthrough baseline) - COMPLETE
-- 🚧 Integrate FSE entropy coder (using klauspost/compress)
-- 🚧 Integrate Huffman coder (using klauspost/compress)
+**Phase 3: Entropy Coding ✅ COMPLETE**:
+- ✅ Delta codec (real compression)
+- ✅ ZigZag codec (signed integer handling)
+- ✅ Bitpack codec (minimal bit packing)
+- ✅ Constant codec (extreme compression for identical values)
+- ✅ Identity codec (passthrough baseline)
+- ✅ **FSE entropy coder** (Klaus Post library - 353-450 MB/s)
+- ✅ **Huffman coder** (Klaus Post huff0 - 283-338 MB/s)
+
+**Next Steps (Phase 4 - Typed API & Streaming)**:
+- 🚧 High-level decompression API (DecompressInt64, DecompressFloat64)
+- 🚧 Streaming decompression (io.Reader interface)
+- 🚧 Add Decompress4X support for 4x entropy coding speedup
 - 🚧 Public API integration
 - 🚧 Performance optimization (target: match C library speed)
 
@@ -171,12 +176,13 @@ outputs, _ := executor.Execute(parsedGraph,
 - 🚀 **Better performance**: Optimized Go code with fewer FFI calls
 
 **Test Coverage**:
-- 388 total tests (100% passing)
+- 462 total tests (100% passing)
 - Frame parser: 79 tests
-- Codec system: 122 tests (5 codecs implemented)
+- Codec system: 149 tests (7 codecs: Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman)
 - Graph executor: 42 tests
 - Integration tests: 5 end-to-end tests
 - CGO implementation: 140 tests
+- Fuzz testing: 8.2M+ executions (zero crashes)
 
 ### Phase 7: Advanced Features (Planned - v1.1+)
 See [Advanced Features Roadmap](#advanced-features-roadmap) below for Python/C++ feature parity plans.
@@ -485,7 +491,7 @@ go-openzl/
 │   └── writer.go       # Streaming writer
 ├── internal/           # Pure Go decoder (in development)
 │   ├── frame/          # Frame parser (Phase 1 ✅)
-│   ├── codec/          # 5 codecs: Identity, Constant, Delta, ZigZag, Bitpack (Phase 2 ✅)
+│   ├── codec/          # 7 codecs: Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman (Phases 2-3 ✅)
 │   └── graph/          # Graph executor (Phase 2 ✅)
 ├── examples/           # Usage examples
 │   ├── simple/         # Basic compression example

@@ -71,11 +71,16 @@ Unsure where to begin? Look for issues labeled:
    - Build scripts for OpenZL C library
    - Release automation
 
-5. **Advanced Features**
-   - Streaming API (io.Reader/Writer)
+5. **Pure Go Decoder** (Active Development!)
+   - Phase 4: Typed API and Streaming (current)
+   - Performance optimization (4X entropy coding variants)
+   - Public API integration
+   - Additional codecs (RLE, LZ, etc.)
+
+6. **Advanced Features**
    - Concurrent compression workers
    - Custom compression graphs
-   - Performance optimization
+   - Training and dictionary support
 
 ## Development Setup
 
