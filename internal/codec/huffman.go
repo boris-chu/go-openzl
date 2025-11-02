@@ -132,3 +132,13 @@ func (h *Huffman) Encode(dst, src, params []byte) (int, error) {
 
 	return n, nil
 }
+
+// PreservesSize returns false because Huffman is an entropy coder that changes size.
+//
+// Huffman compresses data by assigning shorter codes to more frequent symbols,
+// typically achieving 1.5-3x compression on text and byte streams.
+//
+// This is a size-changing codec that requires explicit size metadata.
+func (h *Huffman) PreservesSize() bool {
+	return false
+}

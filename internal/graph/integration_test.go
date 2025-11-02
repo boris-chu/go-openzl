@@ -400,6 +400,143 @@ func TestEndToEnd_DeltaCodec(t *testing.T) {
 	t.Logf("   Delta values: %v (smaller numbers = better compression!)", deltas)
 }
 
+// TestEndToEnd_DeltaHuffmanPipeline tests a multi-node pipeline with Delta→Huffman.
+//
+// This tests the new smart size inference feature:
+// - Delta is size-preserving, so its output size can be inferred
+// - Huffman is size-changing and the final output, so its size comes from the frame header
+func TestEndToEnd_DeltaHuffmanPipeline(t *testing.T) {
+	// Create monotonically increasing timestamps (ideal for Delta encoding)
+	timestamps := []uint64{1000, 1005, 1008, 1012, 1015, 1020, 1025, 1030}
+
+	// Convert to bytes (8 bytes per uint64)
+	original := make([]byte, len(timestamps)*8)
+	for i, ts := range timestamps {
+		binary.LittleEndian.PutUint64(original[i*8:], ts)
+	}
+
+	t.Logf("Original data: %d timestamps = %d bytes", len(timestamps), len(original))
+	t.Logf("Timestamps: %v", timestamps)
+
+	// Step 1: Apply Delta encoding (this is what compression would do)
+	deltaCodec := codec.NewDelta(8)
+	deltaEncoded := make([]byte, len(original))
+	n, err := deltaCodec.Encode(deltaEncoded, original, nil)
+	if err != nil {
+		t.Fatalf("Delta encode failed: %v", err)
+	}
+	deltaEncoded = deltaEncoded[:n]
+
+	// Log delta values
+	deltas := make([]uint64, len(timestamps))
+	for i := 0; i < len(timestamps); i++ {
+		deltas[i] = binary.LittleEndian.Uint64(deltaEncoded[i*8:])
+	}
+	t.Logf("After Delta encoding: %v (deltas are smaller!)", deltas)
+
+	// Step 2: Apply Huffman encoding to delta-encoded data
+	huffmanCodec := codec.NewHuffman()
+	huffmanEncoded := make([]byte, len(deltaEncoded)*2) // Oversize for safety
+	n, err = huffmanCodec.Encode(huffmanEncoded, deltaEncoded, nil)
+	if err != nil {
+		t.Fatalf("Huffman encode failed: %v", err)
+	}
+	huffmanEncoded = huffmanEncoded[:n]
+
+	compressionRatio := float64(len(original)) / float64(len(huffmanEncoded))
+	t.Logf("After Huffman encoding: %d bytes (%.2fx compression)", len(huffmanEncoded), compressionRatio)
+
+	// Step 3: Create multi-node graph: Delta → Huffman
+	// Node 0: Huffman (leaf node, decompresses from payload)
+	// Node 1: Delta (uses Node 0 output as input)
+	graph := &Graph{
+		Nodes: []*Node{
+			{
+				CodecID: codec.IDHuffman,
+				Params:  nil,
+				Inputs:  nil, // Leaf node (decompresses from compressed payload)
+			},
+			{
+				CodecID: codec.IDDelta,
+				Params:  []byte{8}, // 8-byte elements (uint64)
+				Inputs:  []int{0},  // Uses Huffman output as input
+			},
+		},
+		Outputs: []int{1}, // Final output is from Delta (Node 1)
+	}
+
+	// Step 4: Encode graph
+	graphBytes, err := EncodeGraph(graph)
+	if err != nil {
+		t.Fatalf("EncodeGraph() error = %v", err)
+	}
+	t.Logf("Graph encoded: %d bytes", len(graphBytes))
+
+	// Step 5: Create frame payload (graph + Huffman-compressed data)
+	payload := append(graphBytes, huffmanEncoded...)
+	t.Logf("Total payload: %d bytes (graph + compressed data)", len(payload))
+
+	// Step 6: Create frame
+	testFrame := &frame.Frame{
+		Header: &frame.Header{
+			Magic:   frame.MagicNumberBase + 21,
+			Version: 21,
+			Flags:   0,
+		},
+		Outputs: []*frame.Output{
+			{
+				Type:             frame.TypeSerial,
+				DecompressedSize: uint64(len(original)), // Final output size (after Delta)
+			},
+		},
+		Payload: payload,
+	}
+
+	// Step 7: Parse graph from payload
+	parser := NewParser(testFrame.Payload)
+	parsedGraph, graphSize, err := parser.Parse()
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	t.Logf("Parsed graph: %s", parsedGraph)
+
+	// Step 8: Extract compressed data
+	compressedData := testFrame.Payload[graphSize:]
+	t.Logf("Compressed data: %d bytes", len(compressedData))
+
+	// Step 9: Execute graph to decompress
+	// This is where smart size inference happens:
+	// - Huffman (Node 0): output size is inferred from Delta's input requirement
+	// - Delta (Node 1): output size comes from frame header (64 bytes)
+	executor := DefaultExecutor()
+	outputSizes := []uint64{testFrame.Outputs[0].DecompressedSize}
+	outputs, err := executor.Execute(parsedGraph, compressedData, outputSizes)
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	// Step 10: Verify decompressed data matches original
+	if len(outputs) != 1 {
+		t.Fatalf("Execute() returned %d outputs, want 1", len(outputs))
+	}
+
+	decompressed := outputs[0]
+	if !bytes.Equal(decompressed, original) {
+		// Show what we got vs expected
+		gotTimestamps := make([]uint64, len(decompressed)/8)
+		for i := range gotTimestamps {
+			gotTimestamps[i] = binary.LittleEndian.Uint64(decompressed[i*8:])
+		}
+		t.Errorf("Decompressed data mismatch:\nGot:  %v\nWant: %v", gotTimestamps, timestamps)
+	}
+
+	// Success!
+	t.Logf("✅ Delta→Huffman multi-node pipeline works!")
+	t.Logf("   %d bytes → Delta → Huffman → %d bytes (%.2fx compression)",
+		len(original), len(huffmanEncoded), compressionRatio)
+	t.Logf("   Decompression: Huffman → Delta → %d bytes (matches original!)", len(decompressed))
+}
+
 // BenchmarkEndToEnd benchmarks the complete decompression flow
 func BenchmarkEndToEnd(b *testing.B) {
 	original := []byte("Benchmark test data for end-to-end decompression")

@@ -45,3 +45,9 @@ func (c *Identity) Encode(dst, src, params []byte) (int, error) {
 	}
 	return copy(dst, src), nil
 }
+
+// PreservesSize returns true because Identity always produces output
+// of the same size as its input (1:1 copy).
+func (c *Identity) PreservesSize() bool {
+	return true
+}

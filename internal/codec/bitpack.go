@@ -282,3 +282,14 @@ func (b *Bitpack) Encode(dst, src, params []byte) (int, error) {
 
 	return bytePos, nil
 }
+
+// PreservesSize returns false because Bitpack changes size.
+//
+// Bitpack compresses integers by using fewer bits per value, significantly
+// reducing the output size. For example, packing 1000 values that fit in
+// 3 bits produces ~375 bytes instead of 4000 bytes (for 32-bit integers).
+//
+// This is a size-changing codec that requires explicit size metadata.
+func (b *Bitpack) PreservesSize() bool {
+	return false
+}

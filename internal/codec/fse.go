@@ -104,3 +104,13 @@ func (f *FSE) Encode(dst, src, params []byte) (int, error) {
 
 	return n, nil
 }
+
+// PreservesSize returns false because FSE is an entropy coder that changes size.
+//
+// FSE compresses data by using fewer bits for more frequent symbols,
+// typically achieving 1.5-3x compression on byte streams.
+//
+// This is a size-changing codec that requires explicit size metadata.
+func (f *FSE) PreservesSize() bool {
+	return false
+}

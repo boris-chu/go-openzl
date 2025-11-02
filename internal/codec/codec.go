@@ -55,6 +55,14 @@ type Codec interface {
 	//
 	// Parameters are the same as Decode but reversed.
 	Encode(dst, src, params []byte) (int, error)
+
+	// PreservesSize returns true if this codec always produces output
+	// of the same size as its input.
+	//
+	// Size-preserving codecs (Identity, Delta, ZigZag, Constant) allow
+	// for size inference in multi-node pipelines. Size-changing codecs
+	// (Huffman, FSE, Bitpack) require explicit size metadata.
+	PreservesSize() bool
 }
 
 // ID uniquely identifies a codec within OpenZL.

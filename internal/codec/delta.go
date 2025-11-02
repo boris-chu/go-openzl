@@ -270,3 +270,12 @@ func (c *Delta) encode64(dst, src []byte, numElements int) (int, error) {
 
 	return numElements * 8, nil
 }
+
+// PreservesSize returns true because Delta always produces output
+// of the same size as its input.
+//
+// Delta encodes differences but maintains the same number of elements
+// and element size. For example, 100 uint64s → 100 uint64 deltas.
+func (c *Delta) PreservesSize() bool {
+	return true
+}

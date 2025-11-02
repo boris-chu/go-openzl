@@ -59,11 +59,17 @@ func (e *Executor) Execute(graph *Graph, compressedData []byte, outputSizes []ui
 			len(outputSizes), len(graph.Outputs))
 	}
 
+	// Compute all node output sizes using smart inference
+	nodeSizes, err := e.inferNodeSizes(graph, outputSizes)
+	if err != nil {
+		return nil, fmt.Errorf("infer node sizes: %w", err)
+	}
+
 	// Execute each node and store results
 	nodeOutputs := make([][]byte, len(graph.Nodes))
 
 	for i, node := range graph.Nodes {
-		output, err := e.executeNode(node, i, compressedData, nodeOutputs, outputSizes, graph.Outputs)
+		output, err := e.executeNode(node, i, compressedData, nodeOutputs, nodeSizes)
 		if err != nil {
 			return nil, fmt.Errorf("execute node %d (codec %s): %w", i, node.CodecID, err)
 		}
@@ -79,38 +85,80 @@ func (e *Executor) Execute(graph *Graph, compressedData []byte, outputSizes []ui
 	return outputs, nil
 }
 
+// inferNodeSizes computes the output size for each node using smart inference.
+//
+// Algorithm:
+// 1. Start with final output sizes from frame header
+// 2. For size-preserving codecs, propagate sizes backward to their inputs
+// 3. Size-changing codecs require explicit size information
+func (e *Executor) inferNodeSizes(graph *Graph, outputSizes []uint64) ([]uint64, error) {
+	nodeSizes := make([]uint64, len(graph.Nodes))
+	sizeKnown := make([]bool, len(graph.Nodes))
+
+	// Step 1: Mark final output nodes with their known sizes
+	for i, outIdx := range graph.Outputs {
+		nodeSizes[outIdx] = outputSizes[i]
+		sizeKnown[outIdx] = true
+	}
+
+	// Step 2: Backward propagation for size-preserving codecs
+	// For a size-preserving codec, its input has the same size as its output
+	// Process nodes in reverse topological order (from outputs to inputs)
+	for nodeIdx := len(graph.Nodes) - 1; nodeIdx >= 0; nodeIdx-- {
+		node := graph.Nodes[nodeIdx]
+
+		// Skip if size not yet known
+		if !sizeKnown[nodeIdx] {
+			continue
+		}
+
+		// This node's size is known
+		// Look up codec to see if it's size-preserving
+		codec, ok := e.registry.Get(node.CodecID)
+		if !ok {
+			return nil, fmt.Errorf("codec %s not registered", node.CodecID)
+		}
+
+		// If this is a size-preserving codec, propagate size to its inputs
+		if codec.PreservesSize() && len(node.Inputs) > 0 {
+			// Size-preserving codec: input size = output size
+			for _, inputIdx := range node.Inputs {
+				if !sizeKnown[inputIdx] {
+					nodeSizes[inputIdx] = nodeSizes[nodeIdx]
+					sizeKnown[inputIdx] = true
+				}
+			}
+		}
+	}
+
+	// Step 3: Validate that all nodes have sizes
+	// (Size-changing codecs in intermediate positions without size metadata will fail here)
+	for i, known := range sizeKnown {
+		if !known {
+			return nil, fmt.Errorf("cannot infer output size for node %d (codec %s): "+
+				"size-changing codec in intermediate position requires explicit size metadata",
+				i, graph.Nodes[i].CodecID)
+		}
+	}
+
+	return nodeSizes, nil
+}
+
 // executeNode executes a single node in the graph
 func (e *Executor) executeNode(
 	node *Node, nodeIdx int, compressedData []byte,
-	nodeOutputs [][]byte, outputSizes []uint64, graphOutputs []int,
+	nodeOutputs [][]byte, nodeSizes []uint64,
 ) ([]byte, error) {
-	// Look up codec
+	// Look up codec (already done in inferNodeSizes, but we need it again)
 	codec, ok := e.registry.Get(node.CodecID)
 	if !ok {
 		return nil, fmt.Errorf("codec %s not registered", node.CodecID)
 	}
 
-	// Determine output size
-	// If this node is a graph output, use the size from frame header
-	// Otherwise, we need to infer it (for now, use a heuristic)
-	var outputSize uint64
-	for i, outIdx := range graphOutputs {
-		if outIdx == nodeIdx {
-			outputSize = outputSizes[i]
-			break
-		}
-	}
+	// Get precomputed output size (can be 0 for empty data)
+	outputSize := nodeSizes[nodeIdx]
 
-	// If not a final output, we need to determine size another way
-	// For now, use a simple heuristic based on codec type
-	if outputSize == 0 {
-		// For intermediate nodes, estimate output size
-		// This is codec-dependent; for Identity it's the same as input
-		// For now, use compressed data size as a reasonable default
-		outputSize = uint64(len(compressedData))
-	}
-
-	// Allocate output buffer
+	// Allocate output buffer (may be empty for outputSize=0)
 	dst := make([]byte, outputSize)
 
 	// Determine source data

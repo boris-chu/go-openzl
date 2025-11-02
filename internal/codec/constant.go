@@ -175,3 +175,13 @@ func (c *Constant) Encode(dst, src, params []byte) (int, error) {
 	copy(dst, constantValue)
 	return elementSize, nil
 }
+
+// PreservesSize returns false because Constant changes size.
+//
+// During compression, it reduces N elements to 1 element.
+// During decompression, it expands 1 element to N elements.
+//
+// This is a size-changing codec that requires explicit size metadata.
+func (c *Constant) PreservesSize() bool {
+	return false
+}

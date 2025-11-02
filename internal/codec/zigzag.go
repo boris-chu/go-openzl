@@ -237,3 +237,12 @@ func (c *ZigZag) encode64(dst, src []byte, numElements int) (int, error) {
 	}
 	return numElements * 8, nil
 }
+
+// PreservesSize returns true because ZigZag always produces output
+// of the same size as its input.
+//
+// ZigZag re-encodes signed integers as unsigned but maintains the same
+// number of elements and element size. For example, 100 int32s → 100 uint32s.
+func (c *ZigZag) PreservesSize() bool {
+	return true
+}
