@@ -8,12 +8,14 @@ import (
 // Delta codec stores differences between consecutive values.
 //
 // Format:
-//   First value: stored as-is (raw)
-//   Subsequent values: delta from previous value
+//
+//	First value: stored as-is (raw)
+//	Subsequent values: delta from previous value
 //
 // Example:
-//   Input:  [100, 102, 105, 103, 108]
-//   Deltas: [100, 2, 3, -2, 5]
+//
+//	Input:  [100, 102, 105, 103, 108]
+//	Deltas: [100, 2, 3, -2, 5]
 //
 // Supports element widths: 1, 2, 4, 8 bytes (uint8, uint16, uint32, uint64)
 // Negative deltas are stored using two's complement.
@@ -52,8 +54,9 @@ func (c *Delta) Name() string {
 // If params is empty, element size defaults to 8 bytes.
 //
 // Decoding algorithm:
-//   output[0] = input[0]  (first value is raw)
-//   output[i] = output[i-1] + input[i]  (subsequent values are deltas)
+//
+//	output[0] = input[0]  (first value is raw)
+//	output[i] = output[i-1] + input[i]  (subsequent values are deltas)
 func (c *Delta) Decode(dst, src, params []byte) (int, error) {
 	// Parse element size from params
 	elementSize := c.elementSize
@@ -161,8 +164,9 @@ func (c *Delta) decode64(dst, src []byte, numElements int) (int, error) {
 // Encode encodes data using delta encoding.
 //
 // Encoding algorithm:
-//   output[0] = input[0]  (first value is raw)
-//   output[i] = input[i] - input[i-1]  (subsequent values are deltas)
+//
+//	output[0] = input[0]  (first value is raw)
+//	output[i] = input[i] - input[i-1]  (subsequent values are deltas)
 func (c *Delta) Encode(dst, src, params []byte) (int, error) {
 	// Parse element size from params
 	elementSize := c.elementSize

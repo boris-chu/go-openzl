@@ -12,17 +12,17 @@ func FuzzParse(f *testing.F) {
 	// Seed with valid frames
 	f.Add([]byte{
 		0xD5, 0xA5, 0xB1, 0xD7, // Magic v21
-		0x03,       // Flags
-		0x01,       // Token1
-		0x05,       // Size
+		0x03, // Flags
+		0x01, // Token1
+		0x05, // Size
 	})
 
 	f.Add([]byte{
 		0xD5, 0xA5, 0xB1, 0xD7, // Magic v21
-		0x00,       // Flags
-		0x02,       // Token1 (2 outputs)
-		0x05,       // Size1
-		0x0A,       // Size2
+		0x00, // Flags
+		0x02, // Token1 (2 outputs)
+		0x05, // Size1
+		0x0A, // Size2
 	})
 
 	// Fuzz

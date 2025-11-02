@@ -260,8 +260,8 @@ func TestParseZeroOutputs(t *testing.T) {
 	// Create a frame with zero outputs (invalid)
 	data := []byte{
 		0xd5, 0xa5, 0xb1, 0xd7, // Magic (version 21)
-		0x00,       // Flags
-		0x00,       // Token1: nbOutputs=0 (invalid!)
+		0x00, // Flags
+		0x00, // Token1: nbOutputs=0 (invalid!)
 	}
 
 	_, err := Parse(data)
