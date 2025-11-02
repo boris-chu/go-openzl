@@ -99,7 +99,7 @@ func TestEncodeGraph_InvalidGraph(t *testing.T) {
 		graph *Graph
 	}{
 		{
-			name: "nil graph",
+			name:  "nil graph",
 			graph: nil,
 		},
 		{

@@ -187,8 +187,8 @@ func TestEndToEnd_TwoNodePipeline(t *testing.T) {
 	// Graph: Identity → Identity (two-stage pipeline)
 	graph := &Graph{
 		Nodes: []*Node{
-			{CodecID: codec.IDIdentity, Inputs: nil},       // Stage 1
-			{CodecID: codec.IDIdentity, Inputs: []int{0}},  // Stage 2 (uses output of stage 1)
+			{CodecID: codec.IDIdentity, Inputs: nil},      // Stage 1
+			{CodecID: codec.IDIdentity, Inputs: []int{0}}, // Stage 2 (uses output of stage 1)
 		},
 		Outputs: []int{1}, // Final output is from stage 2
 	}
@@ -315,7 +315,7 @@ func TestEndToEnd_DeltaCodec(t *testing.T) {
 			{
 				CodecID: codec.IDDelta,
 				Params:  []byte{8}, // 8-byte (uint64) elements
-				Inputs:  nil,        // Leaf node
+				Inputs:  nil,       // Leaf node
 			},
 		},
 		Outputs: []int{0},

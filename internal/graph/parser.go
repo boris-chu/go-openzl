@@ -29,15 +29,16 @@ func NewParser(payload []byte) *Parser {
 // Returns the graph and the offset where compressed data begins (after the graph).
 //
 // Graph Format (working hypothesis based on C library analysis):
-//   Byte 0: nbNodes (varint) - number of nodes in graph
-//   For each node:
-//     - codecID (varint)
-//     - nbParams (varint)
-//     - params (nbParams bytes)
-//     - nbInputs (varint)
-//     - inputs (nbInputs × varint, each is a node index)
-//   Byte X: nbOutputs (varint) - number of output nodes
-//   Output node indices (nbOutputs × varint)
+//
+//	Byte 0: nbNodes (varint) - number of nodes in graph
+//	For each node:
+//	  - codecID (varint)
+//	  - nbParams (varint)
+//	  - params (nbParams bytes)
+//	  - nbInputs (varint)
+//	  - inputs (nbInputs × varint, each is a node index)
+//	Byte X: nbOutputs (varint) - number of output nodes
+//	Output node indices (nbOutputs × varint)
 //
 // This format may need adjustment as we analyze more real frames.
 func (p *Parser) Parse() (*Graph, int, error) {

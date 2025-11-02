@@ -81,6 +81,9 @@ issues:
     - path: test/tools/
       linters:
         - all  # Ignore linter issues in utility tools
+    - path: internal/codec/delta\.go
+      linters:
+        - dupl  # Encode/decode functions have similar structure by design
     - linters:
         - govet
       text: "fieldalignment"  # Disable fieldalignment globally (micro-optimization)

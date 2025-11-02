@@ -80,8 +80,8 @@ func TestGraph_Validate(t *testing.T) {
 			name: "valid two-node pipeline",
 			graph: &Graph{
 				Nodes: []*Node{
-					{CodecID: codec.IDIdentity, Inputs: nil},       // Leaf node
-					{CodecID: codec.IDIdentity, Inputs: []int{0}},  // Uses output of node 0
+					{CodecID: codec.IDIdentity, Inputs: nil},      // Leaf node
+					{CodecID: codec.IDIdentity, Inputs: []int{0}}, // Uses output of node 0
 				},
 				Outputs: []int{1},
 			},

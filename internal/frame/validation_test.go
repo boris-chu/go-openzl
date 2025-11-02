@@ -9,12 +9,12 @@ import (
 // TestMagicNumberEncoding validates magic number format
 func TestMagicNumberEncoding(t *testing.T) {
 	tests := []struct {
-		version      uint32
+		version       uint32
 		expectedMagic uint32
 	}{
-		{8, 0xD7B1A5C8},   // Min version
-		{21, 0xD7B1A5D5},  // Current version
-		{15, 0xD7B1A5CF},  // Middle version
+		{8, 0xD7B1A5C8},  // Min version
+		{21, 0xD7B1A5D5}, // Current version
+		{15, 0xD7B1A5CF}, // Middle version
 	}
 
 	for _, tt := range tests {
@@ -97,38 +97,38 @@ func TestVersionRangeValidation(t *testing.T) {
 // TestToken1Encoding validates token1 byte packing
 func TestToken1Encoding(t *testing.T) {
 	tests := []struct {
-		name        string
-		nbOutputs   int
-		type0       OutputType
-		type1       OutputType
+		name         string
+		nbOutputs    int
+		type0        OutputType
+		type1        OutputType
 		expectedByte uint8
 	}{
 		{
-			name:        "1 output, serial",
-			nbOutputs:   1,
-			type0:       TypeSerial,
-			type1:       TypeSerial,
+			name:         "1 output, serial",
+			nbOutputs:    1,
+			type0:        TypeSerial,
+			type1:        TypeSerial,
 			expectedByte: 0x01, // 0000 0001 (type0=00, nbOutputs=1)
 		},
 		{
-			name:        "1 output, numeric",
-			nbOutputs:   1,
-			type0:       TypeNumeric,
-			type1:       TypeSerial,
+			name:         "1 output, numeric",
+			nbOutputs:    1,
+			type0:        TypeNumeric,
+			type1:        TypeSerial,
 			expectedByte: 0x21, // 0010 0001 (type0=10, nbOutputs=1)
 		},
 		{
-			name:        "2 outputs, serial+string",
-			nbOutputs:   2,
-			type0:       TypeSerial,
-			type1:       TypeString,
+			name:         "2 outputs, serial+string",
+			nbOutputs:    2,
+			type0:        TypeSerial,
+			type1:        TypeString,
 			expectedByte: 0xC2, // 1100 0010 (type1=11, type0=00, nbOutputs=2)
 		},
 		{
-			name:        "2 outputs, numeric+struct",
-			nbOutputs:   2,
-			type0:       TypeNumeric,
-			type1:       TypeStruct,
+			name:         "2 outputs, numeric+struct",
+			nbOutputs:    2,
+			type0:        TypeNumeric,
+			type1:        TypeStruct,
 			expectedByte: 0x62, // 0110 0010 (type1=01, type0=10, nbOutputs=2)
 		},
 	}
@@ -174,11 +174,11 @@ func TestSizeVarintEncoding(t *testing.T) {
 		actualSize uint64
 		varint     uint64
 	}{
-		{0, 1},     // size 0 -> varint 1
-		{1, 2},     // size 1 -> varint 2
-		{4, 5},     // size 4 -> varint 5 (minimal.bin)
-		{13, 14},   // size 13 -> varint 14 (with_checksums.bin)
-		{127, 128}, // boundary case
+		{0, 1},             // size 0 -> varint 1
+		{1, 2},             // size 1 -> varint 2
+		{4, 5},             // size 4 -> varint 5 (minimal.bin)
+		{13, 14},           // size 13 -> varint 14 (with_checksums.bin)
+		{127, 128},         // boundary case
 		{1048576, 1048577}, // 1MB -> varint 1MB+1
 	}
 
@@ -207,9 +207,9 @@ func TestSizeVarintEncoding(t *testing.T) {
 // TestFlagsEncoding validates flag bits
 func TestFlagsEncoding(t *testing.T) {
 	tests := []struct {
-		name         string
-		flags        FrameFlags
-		hasContent   bool
+		name          string
+		flags         FrameFlags
+		hasContent    bool
 		hasCompressed bool
 	}{
 		{"no flags", 0x00, false, false},
@@ -318,9 +318,9 @@ func TestOutputTypeValidation(t *testing.T) {
 func TestFrameRoundtripConstants(t *testing.T) {
 	// These values MUST match the C library exactly
 	const (
-		expectedBase = 0xD7B1A5C0
-		expectedMin  = 8
-		expectedMax  = 21
+		expectedBase  = 0xD7B1A5C0
+		expectedMin   = 8
+		expectedMax   = 21
 		expectedChunk = 21
 	)
 
