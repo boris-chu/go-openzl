@@ -196,9 +196,10 @@ func DefaultRegistry() *Registry {
 	reg.Register(NewConstant(4)) // Default to 4-byte elements
 	reg.Register(NewDelta(8))    // Default to 8-byte (uint64) elements
 	reg.Register(NewZigZag(4))   // Default to 4-byte (int32) elements
+	reg.Register(NewBitpack(4))  // Default to 4-byte (uint32) elements
 
 	// Phase 3 (Entropy Coding): FSE, Huffman, ANS, Range Coding
-	// Phase 5 (Advanced Codecs): Bitpack, Transpose, LZ, ROLZ, etc.
+	// Phase 5 (Advanced Codecs): Transpose, LZ, ROLZ, etc.
 	return reg
 }
 
