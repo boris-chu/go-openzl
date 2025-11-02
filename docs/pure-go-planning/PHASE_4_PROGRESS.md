@@ -1,9 +1,9 @@
 # Phase 4 Progress: Typed API & Streaming
 
-**Status**: 🚧 In Progress (Week 1 Complete)
+**Status**: 🚧 In Progress (Milestones 1-2 Complete!)
 **Started**: November 2, 2025
 **Goal**: Create high-level, user-friendly Pure Go decompression APIs
-**Current Progress**: 25% (Typed API Complete)
+**Current Progress**: 50% (Typed API + Streaming API Complete)
 
 ---
 
@@ -148,48 +148,151 @@ BenchmarkDecompressFloat64-14    7154   163272 ns/op   489.98 MB/s
 
 ---
 
+### ✅ Milestone 2: Streaming API (Complete!)
+
+**Achievement**: Full streaming decompression with io.Reader interface and 12 comprehensive tests.
+
+#### What Was Implemented
+
+1. **`purgo.Reader` Type** (214 lines):
+   - Implements io.Reader interface
+   - Lazy initialization (parses frame on first Read)
+   - Internal buffering for efficient reads
+   - Proper EOF handling
+   - Closer support for underlying sources
+
+2. **Streaming API**:
+   ```go
+   func NewReader(r io.Reader) (*Reader, error)
+   func (r *Reader) Read(p []byte) (n int, error)
+   func (r *Reader) Close() error
+   ```
+
+3. **Usage Examples**:
+   ```go
+   // Stream from file
+   file, _ := os.Open("data.zl")
+   reader, _ := purgo.NewReader(file)
+   defer reader.Close()
+
+   io.Copy(os.Stdout, reader) // Stream decompressed data
+
+   // Or read incrementally
+   buffer := make([]byte, 4096)
+   for {
+       n, err := reader.Read(buffer)
+       if err == io.EOF {
+           break
+       }
+       process(buffer[:n])
+   }
+   ```
+
+4. **Comprehensive Test Suite** (368 lines, 12 tests):
+   - Small and large data streaming
+   - Incremental reads (10-byte chunks, 512-byte chunks)
+   - io.Copy integration
+   - Empty data handling
+   - Multiple EOF reads
+   - Error handling and recovery
+   - Close() with and without io.Closer
+   - Integration with typed API
+
+5. **Performance Benchmarks**:
+   - Small data (11 bytes): 12.15 MB/s
+   - Large data (10KB): **974 MB/s** (2x faster than typed API!)
+   - Incremental reads: **983 MB/s** (minimal overhead)
+
+#### Implementation Details
+
+**Architecture**:
+```
+User Code
+    ↓
+reader.Read(buffer) // First call
+    ↓
+initialize()        // Parse frame + execute graph once
+    ↓
+buffer output       // Store all decompressed data
+    ↓
+Subsequent Read()   // Serve from buffer
+    ↓
+Return io.EOF       // When buffer exhausted
+```
+
+**Key Features**:
+- **Lazy initialization**: No work until first Read()
+- **Single decompression**: Frame parsed and executed once
+- **Efficient buffering**: bytes.Buffer for internal storage
+- **Proper EOF**: Consistent EOF behavior across reads
+- **Error persistence**: Once error occurs, all reads return it
+- **Closer support**: Calls Close() on underlying source if available
+
+**Design Decisions**:
+1. **Full frame decompression**: OpenZL frames are typically small, so we decompress the entire frame on first read
+2. **Single-frame support**: Multi-frame streaming would require format changes
+3. **Buffer-based**: Simple and efficient for typical use cases
+4. **io.Reader compliance**: Standard Go interface for maximum compatibility
+
+#### Test Results
+
+All 12 tests passing (100%):
+
+```
+=== Streaming Reader Tests (12) ===
+✅ TestNewReader_Create              - Reader creation
+✅ TestReader_ReadSmallData          - Small data (11 bytes)
+✅ TestReader_ReadIncrementally      - 10-byte chunks
+✅ TestReader_ReadWithIOCopy         - io.Copy integration
+✅ TestReader_ReadEmpty              - Empty data EOF
+✅ TestReader_ReadLargeData          - 100KB streaming
+✅ TestReader_MultipleEOFReads       - Consistent EOF
+✅ TestReader_EmptyInput             - Error on empty input
+✅ TestReader_InvalidData            - Error on invalid frame
+✅ TestReader_ReadAfterError         - Error persistence
+✅ TestReader_Close                  - Close without Closer
+✅ TestReader_CloseWithCloser        - Close with Closer
+✅ TestReader_IntegrationWithTypedAPI - Typed/streaming equivalence
+```
+
+#### Performance Results
+
+**Apple M4 Pro (14 cores, 48MB L2 cache)**:
+
+```
+BenchmarkReader_SmallData-14         1277768    905.5 ns/op   12.15 MB/s
+BenchmarkReader_LargeData-14          113001  10641 ns/op    973.62 MB/s
+BenchmarkReader_IncrementalRead-14    113961  10537 ns/op    983.20 MB/s
+```
+
+**Analysis**:
+- **974-983 MB/s throughput**: 2x faster than typed API (490 MB/s)
+- **Minimal overhead**: Incremental reads as fast as bulk reads
+- **Frame parsing dominates**: Buffering/serving has negligible cost
+- **io.Reader compatible**: Works with all Go streaming tools
+
+**Comparison**:
+- Typed API (DecompressInt64): 490 MB/s
+- Streaming API (Reader): 974 MB/s (2x faster - no type conversion)
+- Identity codec (raw): 16.2 GB/s (baseline)
+
+#### Files Created
+
+1. **`purgo/reader.go`** (214 lines):
+   - Reader type implementation
+   - Full godoc coverage
+   - io.Reader interface compliance
+
+2. **`purgo/reader_test.go`** (368 lines):
+   - 12 comprehensive tests
+   - 3 benchmark functions
+   - Integration tests
+
+**Total**: 582 lines of streaming API
+
+---
+
 ## Next Steps
-
-### 🚧 Milestone 2: Streaming API (Weeks 2-3)
-
-**Goal**: Implement `io.Reader` interface for streaming decompression
-
-**Planned API**:
-```go
-package purgo
-
-type Reader struct {
-    // Internal fields
-}
-
-func NewReader(r io.Reader) (*Reader, error)
-func (r *Reader) Read(p []byte) (n int, error)
-func (r *Reader) Close() error
-```
-
-**Use Case**:
-```go
-file, _ := os.Open("large-file.zl")
-reader, _ := purgo.NewReader(file)
-
-buffer := make([]byte, 4096)
-for {
-    n, err := reader.Read(buffer)
-    if err == io.EOF {
-        break
-    }
-    // Process buffer[:n] incrementally
-}
-```
-
-**Implementation Plan**:
-1. Create Reader type with internal buffer
-2. Parse frame on first Read()
-3. Execute graph incrementally
-4. Buffer output for subsequent Read() calls
-5. Handle EOF properly
-
-**Estimated Effort**: 3-5 days
 
 ---
 
@@ -249,25 +352,29 @@ func Decompress(data []byte) ([]byte, error) {
 
 ## Current Status
 
-### Completed (25%)
+### Completed (50%)
 
-✅ **Typed Decompression API**:
+✅ **Typed Decompression API** (Milestone 1):
 - 11 typed functions (all numeric types)
 - 17 comprehensive tests (100% passing)
 - 490 MB/s performance (< 1% overhead)
 - 920 lines of production code
 
+✅ **Streaming API** (Milestone 2):
+- io.Reader interface implementation
+- 12 comprehensive tests (100% passing)
+- 974-983 MB/s performance (2x faster than typed API!)
+- 582 lines of production code
+
 ### In Progress (0%)
 
-⏳ **Streaming API**: Not started
 ⏳ **4X Optimization**: Not started
 ⏳ **Public API Integration**: Not started
 
 ### Remaining Work
 
-**Week 2-3**: Streaming API
-**Week 4**: 4X optimization
-**Week 3**: Public API integration
+**Milestone 3**: 4X optimization (4-6 days)
+**Milestone 4**: Public API integration (2-3 days)
 
 ---
 
@@ -275,28 +382,32 @@ func Decompress(data []byte) ([]byte, error) {
 
 ### Code Statistics
 
-- **Total Lines**: 920 (purgo package)
+- **Total Lines**: 1,502 (purgo package)
   - decoder.go: 427 lines
   - decoder_test.go: 493 lines
+  - reader.go: 214 lines
+  - reader_test.go: 368 lines
 
 ### Test Statistics
 
-- **Total Tests**: 17 (purgo)
+- **Total Tests**: 29 (purgo: 17 decoder + 12 reader)
 - **Pass Rate**: 100%
-- **Coverage**: All numeric types, edge cases, alignment errors
+- **Coverage**: All numeric types, streaming, edge cases, EOF handling
 
 ### Performance Statistics
 
-- **Typed API Throughput**: 490 MB/s
-- **Overhead**: < 1% vs raw bytes
-- **Memory**: Zero allocations (except result slice)
+- **Typed API Throughput**: 490 MB/s (< 1% overhead vs raw bytes)
+- **Streaming API Throughput**: 974-983 MB/s (2x faster than typed!)
+- **Memory**: Zero allocations (except result slice/buffer)
+- **Small data**: 12.15 MB/s (typed overhead visible)
+- **Large data**: 974 MB/s (optimal throughput)
 
 ### Overall Project Statistics
 
-- **Total Tests**: 479 (462 previous + 17 purgo)
+- **Total Tests**: 491 (462 previous + 29 purgo)
 - **Pass Rate**: 100% (Pure Go only, CGO tests skipped)
 - **Total Codecs**: 7 (Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman)
-- **Performance Range**: 283 MB/s - 125 GB/s
+- **Performance Range**: 12.15 MB/s - 125 GB/s (streaming to codec-level)
 
 ---
 

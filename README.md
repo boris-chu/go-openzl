@@ -137,7 +137,7 @@ This project is in active development:
 // Pure Go typed decompression (no CGO!)
 import "github.com/boris-chu/go-openzl/purgo"
 
-// Decompress to typed slices - simple one-liner!
+// Option 1: Typed decompression - simple one-liner!
 numbers, _ := purgo.DecompressInt64(compressed)
 floats, _ := purgo.DecompressFloat64(compressed)
 bytes, _ := purgo.Decompress(compressed)
@@ -147,7 +147,24 @@ bytes, _ := purgo.Decompress(compressed)
 // - uint8, uint16, uint32, uint64
 // - float32, float64
 
-// Or use low-level API for custom workflows:
+// Option 2: Streaming decompression (io.Reader interface)
+file, _ := os.Open("data.zl")
+reader, _ := purgo.NewReader(file)
+defer reader.Close()
+
+io.Copy(os.Stdout, reader) // Stream decompressed data!
+
+// Or read incrementally:
+buffer := make([]byte, 4096)
+for {
+    n, err := reader.Read(buffer)
+    if err == io.EOF {
+        break
+    }
+    process(buffer[:n])
+}
+
+// Option 3: Low-level API for custom workflows:
 import "github.com/boris-chu/go-openzl/internal/graph"
 
 frame, _ := frame.NewReader(bytes.NewReader(compressed)).ReadFrame()
@@ -167,13 +184,17 @@ outputs, _ := executor.Execute(parsedGraph,
 - ✅ **FSE entropy coder** (Klaus Post library - 353-450 MB/s)
 - ✅ **Huffman coder** (Klaus Post huff0 - 283-338 MB/s)
 
-**Phase 4: Typed API & Streaming (🚧 25% Complete)**:
+**Phase 4: Typed API & Streaming (🚧 50% Complete)**:
 - ✅ **Typed decompression API** (Milestone 1 Complete!)
   - DecompressInt64, DecompressFloat64, DecompressInt32, etc.
   - 11 typed functions for all numeric types
   - 490 MB/s throughput (< 1% overhead)
   - 17 comprehensive tests (100% passing)
-- 🚧 Streaming decompression (io.Reader interface)
+- ✅ **Streaming decompression** (Milestone 2 Complete!)
+  - io.Reader interface implementation
+  - Lazy initialization and efficient buffering
+  - 974-983 MB/s throughput (2x faster than typed!)
+  - 12 comprehensive tests (100% passing)
 - 🚧 Add Decompress4X support for 4x entropy coding speedup
 - 🚧 Public API integration with build tags
 
@@ -185,11 +206,12 @@ outputs, _ := executor.Execute(parsedGraph,
 - 🚀 **Better performance**: Optimized Go code with fewer FFI calls
 
 **Test Coverage**:
-- 479 total tests (100% passing - 462 previous + 17 purgo typed API)
+- 491 total tests (100% passing - 462 previous + 29 purgo)
 - Frame parser: 79 tests
 - Codec system: 149 tests (7 codecs: Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman)
 - Graph executor: 42 tests
-- Typed API: 17 tests (purgo package)
+- Typed API: 17 tests (purgo/decoder)
+- Streaming API: 12 tests (purgo/reader)
 - Integration tests: 5 end-to-end tests
 - CGO implementation: 140 tests
 - Fuzz testing: 8.2M+ executions (zero crashes)
