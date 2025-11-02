@@ -199,7 +199,8 @@ func DefaultRegistry() *Registry {
 	reg.Register(NewBitpack(4))  // Default to 4-byte (uint32) elements
 
 	// Phase 3 (Entropy Coding): FSE, Huffman, ANS, Range Coding
-	reg.Register(NewFSE()) // FSE (Finite State Entropy) - Klaus Post library
+	reg.Register(NewFSE())     // FSE (Finite State Entropy) - Klaus Post library
+	reg.Register(NewHuffman()) // Huffman (huff0) - Klaus Post library
 
 	// Phase 5 (Advanced Codecs): Transpose, LZ, ROLZ, etc.
 	return reg
