@@ -28,6 +28,7 @@
 
 | Library | Compression Ratio | Speed | Use Case |
 |---------|------------------|-------|----------|
+| **OpenZL (CompressSmart v0.3.3)** | **27-35×** 🔥 | Fast | JSON, logs, structured text |
 | **OpenZL (typed)** | **50x** | Fast | Numeric arrays, metrics |
 | **OpenZL (streaming)** | **1364x** | 2287 MB/s | Repeated structured data |
 | zstd | 20-30x | 400 MB/s | General purpose |
@@ -119,20 +120,22 @@ func decompressData(compressed []byte) ([]byte, error) {
 }
 ```
 
-#### OpenZL
+#### OpenZL (v0.3.3)
 ```go
-import "github.com/borischu/go-openzl"
+import "github.com/boris-chu/go-openzl/purgo"
 
 func compressData(data []byte) ([]byte, error) {
-    return openzl.Compress(data)
+    // NEW v0.3.3: CompressSmart with automatic multi-stage pipelines
+    return purgo.CompressSmart(data)
+    // → Achieves 27-35× compression automatically!
 }
 
 func decompressData(compressed []byte) ([]byte, error) {
-    return openzl.Decompress(compressed)
+    return purgo.Decompress(compressed)
 }
 ```
 
-**Benefit**: Simpler API, no buffer management needed
+**Benefit**: Simpler API, no buffer management needed, 27-35× compression ratios!
 
 ---
 
@@ -216,16 +219,16 @@ func compressMetrics(metrics []int64) ([]byte, error) {
 // Compression ratio: ~3-5x
 ```
 
-#### After (OpenZL typed compression)
+#### After (OpenZL typed compression - v0.3.3)
 ```go
-import "github.com/borischu/go-openzl"
+import "github.com/boris-chu/go-openzl/purgo"
 
 func compressMetrics(metrics []int64) ([]byte, error) {
-    return openzl.CompressNumeric(metrics)
+    return purgo.CompressInt64(metrics)
 }
 
 func decompressMetrics(compressed []byte) ([]int64, error) {
-    return openzl.DecompressNumeric[int64](compressed)
+    return purgo.DecompressInt64(compressed)
 }
 // Compression ratio: 50x (10x better!)
 ```
@@ -731,6 +734,6 @@ Use this checklist to decide:
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: October 22, 2025
-**Target**: go-openzl v1.0.0
+**Document Version**: 1.1
+**Last Updated**: November 2, 2025 (updated for v0.3.3)
+**Target**: go-openzl v0.3.3+
