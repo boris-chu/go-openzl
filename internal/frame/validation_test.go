@@ -314,13 +314,14 @@ func TestOutputTypeValidation(t *testing.T) {
 	}
 }
 
-// TestFrameRoundtripConstants ensures our constants match C library
+// TestFrameRoundtripConstants ensures our constants are correct
 func TestFrameRoundtripConstants(t *testing.T) {
-	// These values MUST match the C library exactly
+	// Base constants must match C library
+	// MaxFormatVersion can exceed C library (v22 is our Pure-Go extension)
 	const (
 		expectedBase  = 0xD7B1A5C0
 		expectedMin   = 8
-		expectedMax   = 21
+		expectedMax   = 22 // Updated for v22 (multi-stage pipelines)
 		expectedChunk = 21
 	)
 

@@ -119,6 +119,27 @@ func (r *Reader) ReadFrame() (*Frame, error) {
 		}
 	}
 
+	// NEW (v22+): Read intermediate node sizes
+	var nodeSizes []uint64
+	if header.Version >= NodeSizesVersionMin {
+		// Read number of nodes
+		nbNodes, err := readVarint(combined)
+		if err != nil {
+			return nil, fmt.Errorf("read node count (v22): %w", err)
+		}
+
+		if nbNodes > 0 {
+			nodeSizes = make([]uint64, nbNodes)
+			for i := uint64(0); i < nbNodes; i++ {
+				size, err := readVarint(combined)
+				if err != nil {
+					return nil, fmt.Errorf("read node %d size (v22): %w", i, err)
+				}
+				nodeSizes[i] = size
+			}
+		}
+	}
+
 	// Read remaining payload
 	payload, err := io.ReadAll(r.r)
 	if err != nil {
@@ -126,9 +147,10 @@ func (r *Reader) ReadFrame() (*Frame, error) {
 	}
 
 	return &Frame{
-		Header:  header,
-		Outputs: outputs,
-		Payload: payload,
+		Header:    header,
+		Outputs:   outputs,
+		NodeSizes: nodeSizes, // nil for v21, populated for v22+
+		Payload:   payload,
 	}, nil
 }
 

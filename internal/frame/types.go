@@ -40,10 +40,14 @@ const (
 	MinFormatVersion uint32 = 8
 
 	// MaxFormatVersion is the maximum supported format version
-	MaxFormatVersion uint32 = 21
+	MaxFormatVersion uint32 = 22
 
 	// ChunkVersionMin is the version where modern chunk-based format starts
 	ChunkVersionMin uint32 = 21
+
+	// NodeSizesVersionMin is the version where intermediate node sizes are stored (v22+)
+	// This enables multi-stage pipelines with size-changing codecs in a single frame
+	NodeSizesVersionMin uint32 = 22
 )
 
 // Header size constants
@@ -121,9 +125,10 @@ type Header struct {
 
 // Frame represents a complete OpenZL frame
 type Frame struct {
-	Header  *Header   // Frame header
-	Outputs []*Output // Output streams
-	Payload []byte    // Compressed payload data
+	Header    *Header   // Frame header
+	Outputs   []*Output // Output streams
+	NodeSizes []uint64  // Intermediate node sizes (v22+, nil for v21)
+	Payload   []byte    // Compressed payload data
 }
 
 // Common errors

@@ -32,6 +32,11 @@ func TestPropertyMagicRoundtrip(t *testing.T) {
 		buf.WriteByte(0x01) // Token1
 		buf.WriteByte(0x02) // Size varint (actual size 1)
 
+		// v22+ requires node sizes
+		if version >= NodeSizesVersionMin {
+			buf.WriteByte(0x00) // nbNodes = 0 (empty graph, minimal test)
+		}
+
 		frame, err := Parse(buf.Bytes())
 		if err != nil {
 			t.Errorf("Version %d: parse failed: %v", version, err)

@@ -58,6 +58,44 @@ func Decompress(compressed []byte) ([]byte, error) {
 		return nil, fmt.Errorf("purgo: empty input")
 	}
 
+	// Step 1: Decompress first layer
+	stage1, err := decompressSingleStage(compressed)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: Check if result is itself an OpenZL frame (double-compressed)
+	// Try to parse as frame - if it succeeds, decompress again
+	if isOpenZLFrame(stage1) {
+		stage2, err := decompressSingleStage(stage1)
+		if err != nil {
+			// Not actually a valid frame, return stage1 result
+			return stage1, nil
+		}
+		// Successfully decompressed second layer
+		return stage2, nil
+	}
+
+	// Single-stage compression, return result
+	return stage1, nil
+}
+
+// isOpenZLFrame checks if data starts with OpenZL magic number
+func isOpenZLFrame(data []byte) bool {
+	if len(data) < 4 {
+		return false
+	}
+	// Check if first 4 bytes match OpenZL magic number pattern
+	magic := uint32(data[0]) | uint32(data[1])<<8 | uint32(data[2])<<16 | uint32(data[3])<<24
+	// Magic number is MagicNumberBase + version, where version is 8-22
+	const magicBase uint32 = 0xD7B1A5C0
+	const minVersion uint32 = 8
+	const maxVersion uint32 = 22 // Updated to support v22 (multi-stage pipelines)
+	return magic >= (magicBase+minVersion) && magic <= (magicBase+maxVersion)
+}
+
+// decompressSingleStage decompresses one layer of OpenZL compression
+func decompressSingleStage(compressed []byte) ([]byte, error) {
 	// Step 1: Parse OpenZL frame
 	reader := frame.NewReader(bytes.NewReader(compressed))
 	f, err := reader.ReadFrame()
@@ -82,7 +120,9 @@ func Decompress(compressed []byte) ([]byte, error) {
 		outputSizes[i] = out.DecompressedSize
 	}
 
-	outputs, err := executor.Execute(g, compressedData, outputSizes)
+	// Execute graph with explicit node sizes (v22+) or inference (v21)
+	// f.NodeSizes will be nil for v21 frames, non-nil for v22+ frames
+	outputs, err := executor.ExecuteWithNodeSizes(g, compressedData, outputSizes, f.NodeSizes)
 	if err != nil {
 		return nil, fmt.Errorf("purgo: execute graph failed: %w", err)
 	}
