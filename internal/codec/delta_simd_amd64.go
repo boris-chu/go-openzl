@@ -29,7 +29,7 @@ import (
 //	Input deltas:  [100, 5, 3, 4, 2, 6, 1, 8]
 //	Output values: [100, 105, 108, 112, 114, 120, 121, 129]
 //
-//nolint:dupl // Encode and decode naturally have similar structure
+//nolint:dupl,unused // Encode and decode naturally have similar structure; Called via reflection/interface
 func (c *Delta) decode64SIMD(dst, src []byte, numElements int) (int, error) {
 	// For small arrays, scalar is faster due to SIMD setup overhead
 	if numElements < 32 {
@@ -152,7 +152,7 @@ func (c *Delta) decode32SIMD(dst, src []byte, numElements int) (int, error) {
 
 // encode64SIMD uses SIMD for Delta encoding (difference calculation)
 //
-//nolint:dupl // Encode and decode naturally have similar structure
+//nolint:dupl,unused // Encode and decode naturally have similar structure; Called via reflection/interface
 func (c *Delta) encode64SIMD(dst, src []byte, numElements int) (int, error) {
 	if numElements < 32 {
 		return c.encode64(dst, src, numElements)
