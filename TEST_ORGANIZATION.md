@@ -1,219 +1,141 @@
 # Test Organization
 
-This document explains the test structure for go-openzl.
+This document explains the test structure for go-openzl (v0.3.3).
 
 ## Test Levels
 
 ### 1. Public API Tests (Root Level)
 
-**Location**: `*.go` in project root
-**Purpose**: Test the public API that users interact with
-**Implementation**: Currently uses CGO bindings to OpenZL C library
+**Location**: `*_test.go` in project root
+**Purpose**: Test the CGO-based public API  
+**Implementation**: Uses CGO bindings to OpenZL C library
 
 **Files**:
-- `simple_test.go` - Basic compress/decompress roundtrip
+- `simple_test.go` - Basic compress/decompress
 - `compressor_test.go` - Compressor context API
-- `typed_test.go` - Typed compression (CompressNumeric)
-- `stream_test.go` - Streaming API (Reader/Writer)
+- `typed_test.go` - Typed compression
+- `stream_test.go` - Streaming API
 - `benchmark_test.go` - Performance baselines
-- `benchmark_comparison_test.go` - vs gzip, zstd, etc.
-- `edge_case_test.go` - Edge cases, large files, stress tests
-- `fuzz_test.go` - Fuzz testing of public API
-- `klaus_post_improvements_test.go` - Optimization patterns
+- `benchmark_comparison_test.go` - vs gzip, zstd
+- `edge_case_test.go` - Edge cases, large files
+- `fuzz_test.go` - Fuzz testing
+- `klaus_post_improvements_test.go` - Optimizations
 
-**Why at root level?**
-- Tests the user-facing API
-- Validates CGO implementation (current)
-- Will validate Pure Go implementation (future)
-- Integration tests for entire stack
+**Status**: ✅ Active - CGO API validation
 
-**Status**: ✅ Active - These tests are critical and should be maintained
+### 2. Pure Go API Tests (purgo/)
 
-### 2. Pure Go Implementation Tests (internal/)
-
-**Location**: `internal/frame/*_test.go`
-**Purpose**: Test Pure Go implementation internals
+**Location**: `purgo/*_test.go`
+**Purpose**: Test Pure Go compression/decompression (v0.3.3)
 **Implementation**: Pure Go, zero CGO
 
 **Files**:
-- `internal/frame/reader_test.go` - Frame parsing
-- `internal/frame/validation_test.go` - Format validation (22 tests)
-- `internal/frame/property_test.go` - Property-based testing (9 tests)
-- `internal/frame/fuzz_test.go` - Fuzzing frame parser (8.2M executions)
+- `compress_smart_test.go` - CompressSmart with multi-stage pipelines
+- `compress_test.go` - Basic compression
+- `decoder_test.go` - Decompression  
+- `reader_test.go` - Streaming reader
+- `writer_test.go` - Streaming writer
+- `analyzer_test.go` - Codec detection
 
-**Why in internal/?**
-- Tests implementation details
-- Pure Go only (no CGO)
-- Low-level format verification
-- Not part of public API
+**Key Tests**:
+- ✅ CompressSmart: 27.64× on JSON, 35.25× on repeated text
+- ✅ Multi-stage pipelines (LZ77→Huffman Frame v22)
+- ✅ 280+ tests (100% passing)
 
-**Status**: ✅ Active - Phase 1 complete
+**Status**: ✅ Active - Production ready (v0.3.3)
 
-### 3. Future: Codec Tests (internal/codec/)
+### 3. Frame Format Tests (internal/frame/)
 
-**Location**: `internal/codec/*_test.go` (Phase 2)
-**Purpose**: Test individual codec implementations
-**Implementation**: Pure Go
+**Files**:
+- `reader_test.go` - Frame v21/v22 parsing
+- `writer_test.go` - Frame v21/v22 writing (v0.3.3)
+- `validation_test.go` - Format validation
+- `property_test.go` - Property-based testing
+- `fuzz_test.go` - Fuzzing
 
-**Planned structure**:
-```
-internal/codec/
-├── identity/
-│   ├── identity.go
-│   └── identity_test.go
-├── delta/
-│   ├── delta.go
-│   └── delta_test.go
-├── zigzag/
-│   ├── zigzag.go
-│   └── zigzag_test.go
-└── entropy/
-    ├── fse.go
-    ├── fse_test.go
-    ├── huffman.go
-    └── huffman_test.go
-```
+**Key Features**:
+- ✅ Frame v22 with NodeSizes (v0.3.3)
+- ✅ 7 writer tests, 79 parser tests
+- ✅ 8.2M fuzz executions
 
-**Status**: 📝 Planned - Phase 2
+**Status**: ✅ Active - Frame v22 complete
 
-## Test Strategy by Phase
+### 4. Codec Tests (internal/codec/)
 
-### Phase 1: Frame Parser (Complete ✅)
+**Files** (all 10 codecs):
+- `identity_test.go`, `constant_test.go`, `delta_test.go`
+- `zigzag_test.go`, `bitpack_test.go`, `transpose_test.go`  
+- `rle_test.go`, `lz77_test.go`
+- `huffman_test.go`, `fse_test.go`
 
-**Goal**: Parse OpenZL frames without decompression
+**Status**: ✅ 181 tests - All codecs complete
 
-**Tests**:
-- ✅ internal/frame/reader_test.go - Basic parsing
-- ✅ internal/frame/validation_test.go - Format validation
-- ✅ internal/frame/property_test.go - Property-based
-- ✅ internal/frame/fuzz_test.go - Robustness
+### 5. Graph Executor Tests (internal/graph/)
 
-**Coverage**: 79 tests, 8.2M fuzz executions
+**Files**:
+- `graph_test.go` - Graph structures
+- `executor_test.go` - Graph execution  
+- `parser_test.go` - Graph parsing
+- `integration_test.go` - End-to-end pipelines
 
-### Phase 2: Simple Codecs (Next)
+**Key Features**:
+- ✅ Reverse execution for decompression (v0.3.3)
+- ✅ Multi-stage pipeline support
+- ✅ 42 executor tests
 
-**Goal**: Implement basic codecs, enable decompression
+**Status**: ✅ Active - Multi-stage pipelines working
 
-**Tests planned**:
-- internal/codec/identity/identity_test.go
-- internal/codec/delta/delta_test.go
-- Root tests validate end-to-end works
+## Version Timeline
 
-**Integration**: Root tests (simple_test.go, etc.) will pass when Pure Go is complete
-
-### Phase 3: Complex Codecs
-
-**Goal**: Entropy coding (FSE, Huffman)
-
-**Tests planned**:
-- internal/codec/entropy/*_test.go
-- Property tests for codec correctness
-- Benchmark vs klauspost/compress
-
-### Phase 4: Production Hardening
-
-**Goal**: Replace CGO with Pure Go in public API
-
-**Tests**:
-- ✅ Root tests ALREADY EXIST
-- Just swap backend from CGO to Pure Go
-- All existing tests should pass
-- Compare benchmarks (CGO vs Pure Go)
-
-## When to Archive Tests?
-
-**Archive if**:
-- Test is for removed feature
-- Test is superseded by better test
-- Test is obsolete (API changed)
-
-**Keep if**:
-- Tests public API (even if backend changes)
-- Tests critical functionality
-- Provides performance baseline
-- Edge case coverage
-
-## Current Recommendation: KEEP ALL
-
-**All 9 root test files should be kept** because:
-
-1. ✅ Test public API users depend on
-2. ✅ Provide CGO baseline for Pure Go comparison
-3. ✅ Will validate Pure Go when ready
-4. ✅ Edge case coverage is valuable
-5. ✅ Benchmarks track performance over time
-
-**No files need archiving** at this time.
+- **v0.1.0**: CGO bindings ✅
+- **v0.2.0**: Pure Go decompression ✅
+- **v0.3.0-v0.3.2**: Pure Go compression ✅
+- **v0.3.3**: Frame v22 & multi-stage pipelines ✅
 
 ## Test Execution
 
-### Run all tests
 ```bash
+# All tests
 go test ./...
-```
 
-### Run public API tests only
-```bash
+# CGO API only
 go test -v .
-```
 
-### Run Pure Go frame parser tests only
-```bash
+# Pure Go only
+go test -v ./purgo/...
+
+# Frame tests
 go test -v ./internal/frame/...
-```
 
-### Run benchmarks
-```bash
+# Codec tests
+go test -v ./internal/codec/...
+
+# Benchmarks
 go test -bench=. -benchtime=3s
-```
 
-### Run fuzzing
-```bash
-# Fuzz public API
-go test -fuzz=FuzzCompress -fuzztime=30s
-
-# Fuzz frame parser
+# Fuzzing
 go test -fuzz=FuzzParse -fuzztime=30s ./internal/frame/...
 ```
 
-## Test Coverage Goals
+## Test Coverage (v0.3.3)
 
-### Current Status
-- Public API: ✅ Well covered (9 test files)
-- Frame Parser: ✅ Excellent (79 tests, fuzzing)
-- Codecs: ⏳ Phase 2 (not started)
-- Graph System: ⏳ Phase 4 (not started)
-
-### Target Coverage
-- Overall: >80% line coverage
-- Critical paths: >95% coverage
-- All codecs: Property tests + fuzzing
-- Public API: Integration tests + edge cases
+- CGO API: ✅ 9 test files
+- Pure Go API: ✅ 280+ tests
+- Frame Parser: ✅ 79 tests + fuzzing
+- Codecs: ✅ 181 tests (10 codecs)
+- Graph: ✅ 42 tests
+- **Overall**: >80% line coverage ✅
 
 ## Contributing Tests
 
-When adding tests:
-
-1. **Public API changes** → Add to root `*_test.go`
-2. **Pure Go internals** → Add to `internal/*/\*_test.go`
-3. **New codec** → Create `internal/codec/<name>/<name>_test.go`
-4. **Performance** → Add benchmarks
-5. **Edge cases** → Add to `edge_case_test.go` or specific test file
-6. **Fuzzing** → Add fuzz function, run for 1M+ executions
-
-## Questions?
-
-- Public API vs Internal: Ask "Would a user call this?"
-  - Yes → Root level test
-  - No → Internal test
-
-- Where to add test: Ask "What am I testing?"
-  - User API → Root
-  - Frame format → internal/frame
-  - Codec logic → internal/codec
-  - Graph system → internal/graph
+1. **CGO API** → `*_test.go` (root)
+2. **Pure Go API** → `purgo/*_test.go`
+3. **Frame format** → `internal/frame/*_test.go`
+4. **Codecs** → `internal/codec/*_test.go`
+5. **Graph** → `internal/graph/*_test.go`
 
 ---
 
-**Last Updated**: November 1, 2025
-**Status**: Phase 1 complete, Phase 2 planned
+**Last Updated**: November 2, 2025  
+**Version**: v0.3.3 (Frame v22)
+**Status**: 280+ tests passing ✅
