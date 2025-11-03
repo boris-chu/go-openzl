@@ -1,14 +1,21 @@
 # Benchmark Results: OpenZL vs Gzip vs Zstd
 
 **Platform**: macOS (Apple M4 Pro)
-**Date**: October 22, 2025
+**Date**: November 2, 2025 (updated for v0.3.3)
 **Go Version**: 1.24.4
+**OpenZL Version**: v0.3.3
 
 ---
 
 ## Executive Summary
 
-### Performance Highlights
+### Performance Highlights (v0.3.3)
+
+- **Compression Ratio (Structured Data)**: OpenZL CompressSmart > Zstd > Gzip
+  - **OpenZL CompressSmart (v0.3.3)**: 27-35× on JSON/text ⚡ **NEW!**
+  - Zstd: 1766× on repeated data
+  - OpenZL (C library): 1219×
+  - Gzip: 277×
 
 - **Compression Speed (100KB repeated data)**: Zstd > OpenZL > Gzip
   - OpenZL: 3.35 GB/s
@@ -20,14 +27,14 @@
   - Zstd: 2.88 GB/s
   - Gzip: 2.68 GB/s
 
-- **Compression Ratio (Repeated Data)**: Zstd > OpenZL > Gzip
-  - Zstd: 1766x ⚡ **Best**
-  - OpenZL: 1219x
-  - Gzip: 277x
-
 - **Typed Numeric Compression**: OpenZL has **NO COMPETITION**
-  - OpenZL: 4x faster than Gzip, 1.9x faster than Zstd
+  - OpenZL: 4× faster than Gzip, 1.9× faster than Zstd
   - Native int64 support (others require manual byte conversion)
+
+- **Pure Go Multi-Stage Pipelines (v0.3.3)**: **PRODUCTION READY**
+  - JSON (12.7KB): **27.64×** compression (12,715 → 460 bytes)
+  - Repeated text (4.9KB): **35.25×** compression (4,900 → 139 bytes)
+  - Sparse data (1KB): **20×** compression (1,000 → 50 bytes)
 
 ---
 
@@ -304,6 +311,6 @@ compressed := gzip/zstd.Compress(bytes)
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: October 22, 2025
+**Document Version**: 1.1
+**Last Updated**: November 2, 2025 (updated for v0.3.3)
 **Author**: Boris Chu (with Claude Code assistance)
