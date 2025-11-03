@@ -688,3 +688,222 @@ func TestEndToEnd_LZ77HuffmanPipeline(t *testing.T) {
 	t.Logf("✅ Roundtrip successful: %d bytes → %d bytes → %d bytes → %d bytes",
 		originalSize, lz77Size, finalSize, originalSize)
 }
+
+// TestEndToEnd_RLEHuffmanPipeline demonstrates RLE combined with Huffman
+// for compressing sparse or repetitive data.
+//
+// RLE excels at finding runs of repeated values, and Huffman then compresses
+// the run-length distribution (which is typically skewed - many short runs,
+// few long runs).
+//
+// Pipeline: RLE → Huffman
+//
+// Expected performance:
+//   - Sparse data (many zeros): 10-50× compression
+//   - Boolean flags: 5-10× compression
+//   - After Delta (plateaus): 3-8× compression
+func TestEndToEnd_RLEHuffmanPipeline(t *testing.T) {
+	// Create sparse array (realistic scenario: database column with mostly NULL/0)
+	// Example: status flags where most entries are 0 (inactive) with occasional 1s (active)
+	input := make([]byte, 1000)
+
+	// Mostly zeros with occasional non-zero values
+	for i := 0; i < 50; i++ {
+		pos := i * 20 // Every 20th position
+		if pos < len(input) {
+			input[pos] = 1
+		}
+	}
+
+	originalSize := uint64(len(input))
+	t.Logf("Original sparse array: %d bytes (50 ones, 950 zeros)", originalSize)
+
+	// ========================================================================
+	// Step 1: RLE compression (exploit runs of zeros)
+	// ========================================================================
+
+	rleCodec := codec.NewRLE()
+
+	// RLE output buffer
+	rleBuf := make([]byte, len(input)*2)
+	rleSize, err := rleCodec.Encode(rleBuf, input, nil)
+	if err != nil {
+		t.Fatalf("RLE Encode failed: %v", err)
+	}
+
+	rleRatio := float64(originalSize) / float64(rleSize)
+	t.Logf("After RLE: %d bytes (%.2fx compression)", rleSize, rleRatio)
+
+	// ========================================================================
+	// Step 2: Huffman compression (compress run-length distribution)
+	// ========================================================================
+
+	huffmanCodec := codec.NewHuffman()
+
+	// Huffman output buffer
+	huffmanBuf := make([]byte, rleSize*2)
+	huffmanSize, err := huffmanCodec.Encode(huffmanBuf, rleBuf[:rleSize], nil)
+	if err != nil {
+		t.Fatalf("Huffman Encode failed: %v", err)
+	}
+
+	finalSize := huffmanSize
+	finalRatio := float64(originalSize) / float64(finalSize)
+	t.Logf("After RLE→Huffman: %d bytes (%.2fx compression)", finalSize, finalRatio)
+
+	// ========================================================================
+	// Verify we achieved good compression
+	// ========================================================================
+
+	if finalRatio < 5.0 {
+		t.Errorf("Expected at least 5x compression for sparse data, got %.2fx", finalRatio)
+	}
+
+	t.Logf("✅ RLE→Huffman pipeline: %.2fx better than RLE alone (%.2fx vs %.2fx)",
+		finalRatio/rleRatio, finalRatio, rleRatio)
+
+	// ========================================================================
+	// Step 3: Decompress and verify roundtrip
+	// ========================================================================
+
+	// Decompress Huffman → RLE data
+	rleDecompressed := make([]byte, rleSize)
+	n, err := huffmanCodec.Decode(rleDecompressed, huffmanBuf[:huffmanSize], nil)
+	if err != nil {
+		t.Fatalf("Huffman Decode failed: %v", err)
+	}
+
+	if n != rleSize {
+		t.Errorf("Huffman decoded size %d != RLE size %d", n, rleSize)
+	}
+
+	// Decompress RLE → original data
+	finalOutput := make([]byte, originalSize)
+	n, err = rleCodec.Decode(finalOutput, rleDecompressed[:rleSize], nil)
+	if err != nil {
+		t.Fatalf("RLE Decode failed: %v", err)
+	}
+
+	if n != int(originalSize) {
+		t.Errorf("Final output size %d != original size %d", n, originalSize)
+	}
+
+	if !bytes.Equal(finalOutput, input) {
+		t.Errorf("Roundtrip mismatch!")
+	}
+
+	t.Logf("✅ Roundtrip successful: %d bytes → %d bytes → %d bytes → %d bytes",
+		originalSize, rleSize, finalSize, originalSize)
+}
+
+// TestEndToEnd_TransposeRLEPipeline demonstrates combining Transpose
+// with RLE for numeric arrays with predictable high bytes.
+//
+// This is one of the most effective pipelines for:
+//   - Timestamps (constant high bytes, sequential low bytes)
+//   - Counters (slowly changing high bytes)
+//   - Memory addresses (identical high bytes)
+//
+// Pipeline: Transpose → RLE
+//
+// Why it works:
+//  1. Transpose: Separate bytes by position
+//  2. RLE: Compress constant high byte streams
+//
+// Expected performance:
+//   - Timestamps: 2-4× compression
+//   - Sequential counters: 3-6× compression
+//   - Memory addresses: 2-5× compression
+func TestEndToEnd_TransposeRLEPipeline(t *testing.T) {
+	// Create timestamp-like data (realistic scenario: time-series database)
+	// Unix timestamps in 2021 range, incrementing by 1 second
+	// Use 100 values to overcome Bitpack overhead
+	timestamps := make([]uint64, 100)
+	baseTimestamp := uint64(1609459200) // 2021-01-01 00:00:00
+	for i := range timestamps {
+		timestamps[i] = baseTimestamp + uint64(i) // Increment by 1 second
+	}
+
+	// Serialize to bytes (little-endian uint64)
+	originalData := make([]byte, len(timestamps)*8)
+	for i, ts := range timestamps {
+		binary.LittleEndian.PutUint64(originalData[i*8:], ts)
+	}
+
+	originalSize := uint64(len(originalData))
+	t.Logf("Original timestamps: %d bytes (%d uint64 values)", originalSize, len(timestamps))
+
+	// ========================================================================
+	// Step 1: Transpose (separate byte streams)
+	// ========================================================================
+
+	transposeCodec := codec.NewTranspose()
+	transposeParams := []byte{8} // width=8 for uint64
+
+	transposeBuf := make([]byte, len(originalData))
+	transposeSize, err := transposeCodec.Encode(transposeBuf, originalData, transposeParams)
+	if err != nil {
+		t.Fatalf("Transpose Encode failed: %v", err)
+	}
+
+	t.Logf("After Transpose: %d bytes (size preserved)", transposeSize)
+
+	// ========================================================================
+	// Step 2: RLE encoding (compress constant high byte streams)
+	// ========================================================================
+
+	rleCodec := codec.NewRLE()
+
+	rleBuf := make([]byte, transposeSize*2)
+	rleSize, err := rleCodec.Encode(rleBuf, transposeBuf[:transposeSize], nil)
+	if err != nil {
+		t.Fatalf("RLE Encode failed: %v", err)
+	}
+
+	finalSize := rleSize
+	finalRatio := float64(originalSize) / float64(finalSize)
+	t.Logf("After Transpose→RLE: %d bytes (%.2fx compression)", finalSize, finalRatio)
+
+	// ========================================================================
+	// Verify we achieved good compression
+	// ========================================================================
+
+	if finalRatio < 2.0 {
+		t.Errorf("Expected at least 2× compression for timestamps, got %.2fx", finalRatio)
+	}
+
+	t.Logf("✅ Transpose→RLE pipeline: %.2fx compression", finalRatio)
+
+	// ========================================================================
+	// Step 3: Decompress and verify roundtrip
+	// ========================================================================
+
+	// Decompress RLE → Transpose data
+	rleDecompressed := make([]byte, transposeSize)
+	n, err := rleCodec.Decode(rleDecompressed, rleBuf[:rleSize], nil)
+	if err != nil {
+		t.Fatalf("RLE Decode failed: %v", err)
+	}
+
+	if n != transposeSize {
+		t.Errorf("RLE decoded size %d != Transpose size %d", n, transposeSize)
+	}
+
+	// Decompress Transpose → original data
+	finalOutput := make([]byte, originalSize)
+	n, err = transposeCodec.Decode(finalOutput, rleDecompressed[:transposeSize], transposeParams)
+	if err != nil {
+		t.Fatalf("Transpose Decode failed: %v", err)
+	}
+
+	if n != int(originalSize) {
+		t.Errorf("Final output size %d != original size %d", n, originalSize)
+	}
+
+	if !bytes.Equal(finalOutput, originalData) {
+		t.Errorf("Roundtrip mismatch!")
+	}
+
+	t.Logf("✅ Roundtrip successful: %d → %d → %d → %d bytes",
+		originalSize, transposeSize, finalSize, originalSize)
+}
