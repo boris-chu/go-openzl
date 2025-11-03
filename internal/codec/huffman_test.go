@@ -360,7 +360,7 @@ func TestHuffman_EncodeRoundtrip(t *testing.T) {
 		t.Errorf("decoded size %d != original size %d", n, len(src))
 	}
 
-	if string(output[:n]) != string(src) {
+	if !bytes.Equal(output[:n], src) {
 		t.Errorf("roundtrip mismatch:\nGot:  %q\nWant: %q", output[:n], src)
 	}
 }

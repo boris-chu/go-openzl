@@ -14,7 +14,8 @@ import (
 // Algorithm: Parallel Prefix Sum (Scan)
 //
 // Delta decoding is a prefix sum operation:
-//   output[i] = sum(input[0:i+1])
+//
+//	output[i] = sum(input[0:i+1])
 //
 // SIMD optimization uses a hierarchical approach:
 // 1. Process 4 elements at a time using SSE/AVX
@@ -24,9 +25,11 @@ import (
 // Performance: ~2-3x faster than scalar for large arrays (10K+ elements)
 //
 // Example:
-//   Input deltas:  [100, 5, 3, 4, 2, 6, 1, 8]
-//   Output values: [100, 105, 108, 112, 114, 120, 121, 129]
 //
+//	Input deltas:  [100, 5, 3, 4, 2, 6, 1, 8]
+//	Output values: [100, 105, 108, 112, 114, 120, 121, 129]
+//
+//nolint:dupl // Encode and decode naturally have similar structure
 func (c *Delta) decode64SIMD(dst, src []byte, numElements int) (int, error) {
 	// For small arrays, scalar is faster due to SIMD setup overhead
 	if numElements < 32 {
@@ -84,6 +87,8 @@ func (c *Delta) decode64SIMD(dst, src []byte, numElements int) (int, error) {
 }
 
 // decode32SIMD uses SIMD instructions for 32-bit Delta decoding
+//
+//nolint:unused // Called via reflection/interface in Delta.Decode
 func (c *Delta) decode32SIMD(dst, src []byte, numElements int) (int, error) {
 	if numElements < 64 {
 		return c.decode32(dst, src, numElements)
@@ -146,6 +151,8 @@ func (c *Delta) decode32SIMD(dst, src []byte, numElements int) (int, error) {
 }
 
 // encode64SIMD uses SIMD for Delta encoding (difference calculation)
+//
+//nolint:dupl // Encode and decode naturally have similar structure
 func (c *Delta) encode64SIMD(dst, src []byte, numElements int) (int, error) {
 	if numElements < 32 {
 		return c.encode64(dst, src, numElements)
@@ -195,6 +202,8 @@ func (c *Delta) encode64SIMD(dst, src []byte, numElements int) (int, error) {
 }
 
 // encode32SIMD uses SIMD for 32-bit Delta encoding
+//
+//nolint:unused // Called via reflection/interface in Delta.Encode
 func (c *Delta) encode32SIMD(dst, src []byte, numElements int) (int, error) {
 	if numElements < 64 {
 		return c.encode32(dst, src, numElements)

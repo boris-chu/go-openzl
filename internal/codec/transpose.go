@@ -115,6 +115,8 @@ func (t *Transpose) PreservesSize() bool {
 //	Output: [A0 B0 C0] [A1 B1 C1] [A2 B2 C2] [A3 B3 C3]
 //
 // Returns: Number of bytes written (always len(src))
+//
+//nolint:dupl // Encode and Decode are mirror operations with similar loops
 func (t *Transpose) Encode(dst, src, params []byte) (int, error) {
 	if len(src) == 0 {
 		return 0, nil
@@ -177,6 +179,8 @@ func (t *Transpose) Encode(dst, src, params []byte) (int, error) {
 //	Output: [A0 A1 A2 A3] [B0 B1 B2 B3] [C0 C1 C2 C3]
 //
 // Returns: Number of bytes written (always len(src))
+//
+//nolint:dupl // Encode and Decode are mirror operations with similar loops
 func (t *Transpose) Decode(dst, src, params []byte) (int, error) {
 	if len(src) == 0 {
 		return 0, nil
