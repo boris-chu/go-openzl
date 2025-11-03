@@ -124,11 +124,15 @@ This project is in active development:
 - ✅ **Pure Go Decompression** (Complete decoder)
   - Frame parser (79 tests, 1.6 GB/s)
   - Graph executor (42 tests, 16.2 GB/s)
-  - 8 codecs: Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman, LZ77
-  - Multi-node pipelines: LZ77→Huffman (2.53x on JSON), Delta→Huffman (2.78x)
+  - **10 codecs**: Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman, LZ77, RLE, Transpose
+  - Multi-node pipelines:
+    * LZ77→Huffman: 2.53x on JSON
+    * Delta→Huffman: 2.78x on timestamps
+    * RLE→Huffman: **18.87x** on sparse data! 🔥
+    * Transpose→RLE: 3.76x on timestamps
   - Typed API: DecompressInt64/Float64/etc. (17 tests, 490 MB/s)
   - Streaming API: purgo.Reader with io.Reader interface (12 tests, 2.3 GB/s)
-  - 157 codec tests (100% passing)
+  - 181 codec tests (100% passing)
 
 **Usage Examples**:
 ```go
@@ -194,9 +198,9 @@ original, _ := purgo.Decompress(compressed)
   - 41 compression tests (encoder)
   - 29 decompression tests (decoder + reader)
 - ✅ Frame parser: 79 tests
-- ✅ Codec system: 157 tests (8 codecs with encode/decode including LZ77)
+- ✅ Codec system: 181 tests (10 codecs: Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman, LZ77, RLE, Transpose)
 - ✅ Graph executor: 42 tests
-- ✅ Integration tests: 5 end-to-end tests
+- ✅ Integration tests: 10 end-to-end pipeline tests
 - ✅ Public API: 3 tests (compression + decompression)
 - ✅ Fuzz testing: 8.2M+ executions (zero crashes)
 
@@ -507,7 +511,7 @@ go-openzl/
 │   └── writer.go       # Streaming writer
 ├── internal/           # Pure Go decoder (in development)
 │   ├── frame/          # Frame parser (Phase 1 ✅)
-│   ├── codec/          # 8 codecs: Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman, LZ77 (Phases 2-5 ✅)
+│   ├── codec/          # 10 codecs: Identity, Constant, Delta, ZigZag, Bitpack, FSE, Huffman, LZ77, RLE, Transpose ✅
 │   └── graph/          # Graph executor (Phase 2 ✅)
 ├── examples/           # Usage examples
 │   ├── simple/         # Basic compression example
