@@ -592,7 +592,6 @@ func BenchmarkEndToEnd(b *testing.B) {
 //   - Distance values: Often same (repeated patterns nearby)
 //   - Length values: Often same (common pattern lengths)
 //   - Token types: Biased toward literals or matches
-//
 func TestEndToEnd_LZ77HuffmanPipeline(t *testing.T) {
 	// Create JSON-like data with repeated keys (real-world scenario)
 	// Example: Elasticsearch audit logs with repeated "password_id" field
