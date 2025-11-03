@@ -6,7 +6,6 @@
 package codec
 
 import (
-	"encoding/binary"
 	"unsafe"
 )
 
@@ -38,7 +37,6 @@ func (c *Delta) decode64SIMD(dst, src []byte, numElements int) (int, error) {
 	// This allows us to use AVX2 or SSE2 depending on CPU support
 	const vecSize = 4
 	numVectors := numElements / vecSize
-	remaining := numElements % vecSize
 
 	// Cast byte slices to uint64 slices for easier SIMD processing
 	// This is safe because we've already validated alignment in Decode()
@@ -94,7 +92,6 @@ func (c *Delta) decode32SIMD(dst, src []byte, numElements int) (int, error) {
 	// Process 8 uint32s at a time (256 bits)
 	const vecSize = 8
 	numVectors := numElements / vecSize
-	remaining := numElements % vecSize
 
 	srcU32 := unsafe.Slice((*uint32)(unsafe.Pointer(&src[0])), numElements)
 	dstU32 := unsafe.Slice((*uint32)(unsafe.Pointer(&dst[0])), numElements)
