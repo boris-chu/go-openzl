@@ -130,6 +130,22 @@ func CompressSmart(src []byte) ([]byte, error) {
 		return nil, fmt.Errorf("purgo: cannot compress empty data")
 	}
 
+	// **NEW: Intelligent Segmentation for Structured Data**
+	// Detect format and apply per-segment compression for CSV/JSON
+	format := DetectFormat(src)
+
+	// For CSV/JSON: Use intelligent segmentation
+	// For Text/Binary/Unknown: Fall through to multi-strategy approach
+	switch format {
+	case FormatCSV:
+		// CSV: Segment by column, compress each with optimal codec
+		return compressSegmented(src, SegmentCSV)
+
+	case FormatJSON:
+		// JSON: Segment by field, compress each with optimal codec
+		return compressSegmented(src, SegmentJSON)
+	}
+
 	type strategy struct {
 		name  string
 		graph *graph.Graph
@@ -268,6 +284,99 @@ func CompressSmart(src []byte) ([]byte, error) {
 //
 // This supports multi-node graphs by executing nodes in topological order.
 // Each node takes input from previous nodes or the source data.
+// compressSegmented compresses data using intelligent codec selection.
+//
+// This function segments the input data (e.g., CSV columns, JSON fields), analyzes
+// each segment to determine optimal codecs, then chooses the most common codec
+// and applies it to the entire source data.
+//
+// WORKAROUND: Frame reader currently only supports ≤2 outputs, so we use a
+// single-output approach instead of per-segment compression.
+//
+// Parameters:
+//   - src: Source data to compress
+//   - segmenter: Function that segments data (SegmentCSV or SegmentJSON)
+//
+// Returns:
+//   - Compressed OpenZL frame using single best codec
+//   - Error if segmentation or compression fails
+func compressSegmented(src []byte, segmenter func([]byte) ([]Segment, error)) ([]byte, error) {
+	// Segment the data to analyze optimal codecs
+	segments, err := segmenter(src)
+	if err != nil {
+		return nil, fmt.Errorf("purgo: segmentation failed: %w", err)
+	}
+
+	if len(segments) == 0 {
+		return nil, fmt.Errorf("purgo: no segments generated")
+	}
+
+	// Count codec frequency to choose the most common one
+	codecCounts := make(map[uint16]int)
+	for _, seg := range segments {
+		codecCounts[seg.CodecID]++
+	}
+
+	// Find most common codec
+	var bestCodecID uint16
+	maxCount := 0
+	for codecID, count := range codecCounts {
+		if count > maxCount {
+			maxCount = count
+			bestCodecID = codecID
+		}
+	}
+
+	// Build single-node graph with the most common codec
+	g := &graph.Graph{
+		Nodes: []*graph.Node{
+			{
+				CodecID: codec.ID(bestCodecID),
+				Params:  nil,
+				Inputs:  nil,
+			},
+		},
+		Outputs: []int{0}, // Single output
+	}
+
+	// Compress entire source with chosen codec
+	registry := codec.DefaultRegistry()
+	compressed, err := executeCompressionGraph(g, src, registry)
+	if err != nil {
+		// Fallback to identity on compression failure
+		g.Nodes[0].CodecID = codec.IDIdentity
+		compressed = src
+	}
+
+	// Encode graph and build payload
+	graphBytes, err := graph.EncodeGraph(g)
+	if err != nil {
+		return nil, fmt.Errorf("purgo: encode graph: %w", err)
+	}
+
+	var payload bytes.Buffer
+	payload.Write(graphBytes)
+	payload.Write(compressed)
+
+	// Build single-output frame
+	f := &frame.Frame{
+		Header: &frame.Header{
+			Magic:   frame.MagicNumberBase + 21,
+			Version: 21,
+			Flags:   0,
+		},
+		Outputs: []*frame.Output{
+			{
+				Type:             frame.TypeSerial,
+				DecompressedSize: uint64(len(src)),
+			},
+		},
+		Payload: payload.Bytes(),
+	}
+
+	return serializeFrame(f)
+}
+
 func executeCompressionGraph(g *graph.Graph, src []byte, registry *codec.Registry) ([]byte, error) {
 	// Storage for intermediate results (node outputs)
 	nodeOutputs := make([][]byte, len(g.Nodes))

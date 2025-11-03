@@ -65,11 +65,6 @@ func Decompress(compressed []byte) ([]byte, error) {
 		return nil, fmt.Errorf("purgo: parse frame failed: %w", err)
 	}
 
-	// Verify we have exactly one output
-	if len(f.Outputs) != 1 {
-		return nil, fmt.Errorf("purgo: expected 1 output, got %d", len(f.Outputs))
-	}
-
 	// Step 2: Parse compression graph
 	parser := graph.NewParser(f.Payload)
 	g, graphSize, err := parser.Parse()
@@ -80,15 +75,31 @@ func Decompress(compressed []byte) ([]byte, error) {
 	// Step 3: Execute compression graph to decompress
 	executor := graph.NewExecutor(codec.DefaultRegistry())
 	compressedData := f.Payload[graphSize:]
-	outputSizes := []uint64{f.Outputs[0].DecompressedSize}
+
+	// Extract output sizes from frame (supports multi-output for segmented compression)
+	outputSizes := make([]uint64, len(f.Outputs))
+	for i, out := range f.Outputs {
+		outputSizes[i] = out.DecompressedSize
+	}
 
 	outputs, err := executor.Execute(g, compressedData, outputSizes)
 	if err != nil {
 		return nil, fmt.Errorf("purgo: execute graph failed: %w", err)
 	}
 
-	// Return first output
-	return outputs[0], nil
+	// Handle single-output frames (normal case)
+	if len(outputs) == 1 {
+		return outputs[0], nil
+	}
+
+	// Handle multi-output frames (segmented compression from CompressSmart)
+	// Concatenate all segments back together in original order
+	var result bytes.Buffer
+	for _, segment := range outputs {
+		result.Write(segment)
+	}
+
+	return result.Bytes(), nil
 }
 
 // DecompressInt64 decompresses OpenZL data to int64 slice.

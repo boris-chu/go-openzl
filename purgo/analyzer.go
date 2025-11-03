@@ -194,24 +194,24 @@ const (
 
 // Codec ID constants (must match internal/codec/codec.go)
 const (
-	codecIDIdentity  byte = 0
-	codecIDConstant  byte = 1
-	codecIDDelta     byte = 2
-	codecIDZigZag    byte = 3
-	codecIDBitpack   byte = 4
-	codecIDTranspose byte = 5
-	codecIDQuantize  byte = 6
-	codecIDFSE       byte = 10
-	codecIDHuffman   byte = 11
-	codecIDLZ77      byte = 12
-	codecIDRLE       byte = 13
-	codecIDZstd      byte = 20
+	codecIDIdentity  uint16 = 0
+	codecIDConstant  uint16 = 1
+	codecIDDelta     uint16 = 2
+	codecIDZigZag    uint16 = 3
+	codecIDBitpack   uint16 = 4
+	codecIDTranspose uint16 = 5
+	codecIDQuantize  uint16 = 6
+	codecIDFSE       uint16 = 10
+	codecIDHuffman   uint16 = 11
+	codecIDLZ77      uint16 = 12
+	codecIDRLE       uint16 = 13
+	codecIDZstd      uint16 = 20
 )
 
 // Segment represents a portion of data with a suggested codec
 type Segment struct {
 	Data      []byte
-	CodecID   byte   // Suggested codec ID
+	CodecID   uint16 // Suggested codec ID (matches codec.ID type)
 	CodecName string // Human-readable codec name
 }
 
@@ -292,7 +292,7 @@ func SegmentCSV(data []byte) ([]Segment, error) {
 //  6. UUID/Text patterns: → LZ77 (dictionary compression)
 //  7. Text with low entropy: → FSE or Huffman (entropy coding)
 //  8. Default: General text → LZ77
-func analyzeColumnPattern(data []byte) (codecID byte, codecName string) {
+func analyzeColumnPattern(data []byte) (codecID uint16, codecName string) {
 	if len(data) == 0 {
 		return codecIDIdentity, codecNameIdentity
 	}
