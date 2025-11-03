@@ -221,8 +221,9 @@ func DefaultRegistry() *Registry {
 	reg.Register(NewHuffman()) // Huffman (huff0) - Klaus Post library
 
 	// Phase 5 (Advanced Codecs): LZ77, RLE, Transpose, ROLZ, etc.
-	reg.Register(NewLZ77()) // LZ77 dictionary compression - critical for JSON/text
-	reg.Register(NewRLE())  // RLE run-length encoding - critical for sparse/repetitive data
+	reg.Register(NewLZ77())      // LZ77 dictionary compression - critical for JSON/text
+	reg.Register(NewRLE())       // RLE run-length encoding - critical for sparse/repetitive data
+	reg.Register(NewTranspose()) // Transpose byte streams - exposes patterns for other codecs
 
 	return reg
 }
