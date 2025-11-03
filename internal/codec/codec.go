@@ -109,6 +109,15 @@ const (
 	// IDRLE is Run-Length Encoding
 	IDRLE ID = 13
 
+	// IDRangePack compresses numeric data by subtracting min and packing to narrowest type
+	IDRangePack ID = 14
+
+	// IDPrefix extracts common prefixes from consecutive strings
+	IDPrefix ID = 15
+
+	// IDParseInt parses integer strings to int64 binary values
+	IDParseInt ID = 16
+
 	// IDZstd is Zstandard compression
 	IDZstd ID = 20
 
@@ -140,6 +149,12 @@ func (id ID) String() string {
 		return "LZ77"
 	case IDRLE:
 		return "RLE"
+	case IDRangePack:
+		return "RangePack"
+	case IDPrefix:
+		return "Prefix"
+	case IDParseInt:
+		return "ParseInt"
 	case IDZstd:
 		return "Zstd"
 	default:
@@ -224,6 +239,9 @@ func DefaultRegistry() *Registry {
 	reg.Register(NewLZ77())      // LZ77 dictionary compression - critical for JSON/text
 	reg.Register(NewRLE())       // RLE run-length encoding - critical for sparse/repetitive data
 	reg.Register(NewTranspose()) // Transpose byte streams - exposes patterns for other codecs
+	reg.Register(NewRangePack()) // RangePack numeric compression - critical for timestamps/IDs
+	reg.Register(NewPrefix())    // Prefix extraction - critical for URLs/paths
+	reg.Register(NewParseInt())  // ParseInt text-to-binary - critical for CSV parsing
 
 	return reg
 }
