@@ -224,10 +224,10 @@ func TestRangePack_AllWidths(t *testing.T) {
 	codec := NewRangePack()
 
 	testCases := []struct {
-		name      string
-		width     int
-		values    []uint64
-		expectPW  int // Expected packed width
+		name     string
+		width    int
+		values   []uint64
+		expectPW int // Expected packed width
 	}{
 		{
 			name:     "uint8_range255",

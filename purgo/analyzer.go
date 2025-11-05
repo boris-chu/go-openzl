@@ -17,6 +17,10 @@ const (
 	FormatJSON
 	// FormatCSV represents comma-separated values
 	FormatCSV
+	// FormatNumeric represents numeric columnar data (int/float arrays)
+	FormatNumeric
+	// FormatSparse represents sparse/repetitive data (many zeros/repeats)
+	FormatSparse
 	// FormatText represents plain text
 	FormatText
 	// FormatBinary represents binary data
@@ -30,6 +34,10 @@ func (f DataFormat) String() string {
 		return "JSON"
 	case FormatCSV:
 		return "CSV"
+	case FormatNumeric:
+		return "Numeric"
+	case FormatSparse:
+		return "Sparse"
 	case FormatText:
 		return "Text"
 	case FormatBinary:

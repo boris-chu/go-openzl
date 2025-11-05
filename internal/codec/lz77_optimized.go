@@ -83,7 +83,7 @@ func (c *LZ77Optimized) Encode(dst, src, params []byte) (int, error) {
 
 // detectPattern detects if data is a repeating pattern
 //
-// Returns pattern length if found, 0 otherwise
+// # Returns pattern length if found, 0 otherwise
 //
 // Example: "ABC" repeated 1000 times → returns 3
 func (c *LZ77Optimized) detectPattern(src []byte) int {

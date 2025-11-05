@@ -378,7 +378,7 @@ func BenchmarkLZ77Optimized_vs_Regular(b *testing.B) {
 // formatPatternSize formats pattern size for test name
 func formatPatternSize(size int) string {
 	if size < 10 {
-		return string(rune('0' + size)) + "B"
+		return string(rune('0'+size)) + "B"
 	}
 	return string(rune('0'+size/10)) + string(rune('0'+size%10)) + "B"
 }

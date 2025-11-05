@@ -167,24 +167,24 @@ func TestRLE_ComparePatternsVsRepetition(t *testing.T) {
 	pattern := []byte("ABC")
 	repeats := 33333
 	totalSize := len(pattern) * repeats
-	pattern_input := make([]byte, totalSize)
+	patternInput := make([]byte, totalSize)
 	for i := 0; i < repeats; i++ {
-		copy(pattern_input[i*len(pattern):], pattern)
+		copy(patternInput[i*len(pattern):], pattern)
 	}
 
 	dst1 := make([]byte, totalSize*2)
-	compressed1, _ := codec.Encode(dst1, pattern_input, nil)
+	compressed1, _ := codec.Encode(dst1, patternInput, nil)
 	ratio1 := float64(totalSize) / float64(compressed1)
 
 	// Test 2: True repetition
-	true_input := make([]byte, 100000)
-	for i := range true_input {
-		true_input[i] = 'A'
+	trueInput := make([]byte, 100000)
+	for i := range trueInput {
+		trueInput[i] = 'A'
 	}
 
-	dst2 := make([]byte, len(true_input)*2)
-	compressed2, _ := codec.Encode(dst2, true_input, nil)
-	ratio2 := float64(len(true_input)) / float64(compressed2)
+	dst2 := make([]byte, len(trueInput)*2)
+	compressed2, _ := codec.Encode(dst2, trueInput, nil)
+	ratio2 := float64(len(trueInput)) / float64(compressed2)
 
 	t.Logf("=== Pattern vs Repetition ===")
 	t.Logf("Pattern 'ABC' × %d: %d bytes (%.0fx compression)", repeats, compressed1, ratio1)

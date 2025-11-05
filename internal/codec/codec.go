@@ -13,11 +13,14 @@ import (
 
 // Codec name constants
 const (
-	nameIdentity = "Identity"
-	nameConstant = "Constant"
-	nameDelta    = "Delta"
-	nameZigZag   = "ZigZag"
-	nameBitpack  = "Bitpack"
+	nameIdentity  = "Identity"
+	nameConstant  = "Constant"
+	nameDelta     = "Delta"
+	nameZigZag    = "ZigZag"
+	nameBitpack   = "Bitpack"
+	nameRangePack = "RangePack"
+	namePrefix    = "Prefix"
+	nameParseInt  = "ParseInt"
 )
 
 // Codec is the interface all OpenZL codecs must implement.
@@ -150,11 +153,11 @@ func (id ID) String() string {
 	case IDRLE:
 		return "RLE"
 	case IDRangePack:
-		return "RangePack"
+		return nameRangePack
 	case IDPrefix:
-		return "Prefix"
+		return namePrefix
 	case IDParseInt:
-		return "ParseInt"
+		return nameParseInt
 	case IDZstd:
 		return "Zstd"
 	default:
