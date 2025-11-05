@@ -273,7 +273,7 @@ func (e *Executor) executeNode(
 
 	// Check if this node is the final node in the pipeline (last decoder)
 	isFinalNode := (nodeIdx == len(nodeOutputs)-1) ||
-	                (len(node.Inputs) > 0 && nodeIdx > node.Inputs[0])
+		(len(node.Inputs) > 0 && nodeIdx > node.Inputs[0])
 
 	if isFinalNode {
 		// Final node in compression = first decoder in decompression

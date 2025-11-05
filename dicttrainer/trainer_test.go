@@ -38,7 +38,7 @@ func TestTrainer_BasicUsage(t *testing.T) {
 
 	// Dictionary should contain repeated patterns
 	// Note: Single "," may not be included if longer patterns like "@example.com" score higher
-	if len(dictStr) == 0 {
+	if dictStr == "" {
 		t.Error("Expected non-empty dictionary")
 	}
 }

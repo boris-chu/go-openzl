@@ -93,6 +93,9 @@ issues:
     - path: internal/codec/rangepack\.go
       linters:
         - gocyclo  # RangePack encode/decode has high complexity due to multiple data widths
+    - path: internal/frame/reader\.go
+      linters:
+        - gocyclo  # Frame reader has high complexity due to v21/v22 format handling
     - linters:
         - govet
       text: "fieldalignment"  # Disable fieldalignment globally (micro-optimization)

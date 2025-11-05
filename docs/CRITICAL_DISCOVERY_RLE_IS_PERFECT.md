@@ -309,7 +309,7 @@ ratio := len(data) / len(result)
 
 **New Roadmap**:
 1. v0.3.3: Get exact C library test data and compare fairly
-2. v0.4.0: Optimize frame format (target < 10 bytes overhead)
+2. v0.3.3: Optimize frame format (target < 10 bytes overhead)
 3. v0.5.0: Optimize LZ77 codec (if needed after fair comparison)
 4. v0.6.0: Native multi-stage pipelines (eliminate double-wrap)
 

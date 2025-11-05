@@ -97,11 +97,11 @@ import (
 
 // Trainer trains compression dictionaries from your data.
 type Trainer struct {
-	corpus      []byte   // All training data
-	minLen      int      // Minimum pattern length (default: 3)
-	maxLen      int      // Maximum pattern length (default: 32)
-	maxSamples  int      // Maximum positions to sample (default: 1M)
-	customPats  []string // User-provided patterns (always included)
+	corpus     []byte   // All training data
+	minLen     int      // Minimum pattern length (default: 3)
+	maxLen     int      // Maximum pattern length (default: 32)
+	maxSamples int      // Maximum positions to sample (default: 1M)
+	customPats []string // User-provided patterns (always included)
 }
 
 // Pattern represents a discovered pattern with compression value.
@@ -122,8 +122,8 @@ type Pattern struct {
 func New() *Trainer {
 	return &Trainer{
 		corpus:     []byte{},
-		minLen:     3,  // Minimum useful match length for LZ77
-		maxLen:     32, // Maximum manageable pattern length
+		minLen:     3,       // Minimum useful match length for LZ77
+		maxLen:     32,      // Maximum manageable pattern length
 		maxSamples: 1000000, // 1M samples (fast training)
 		customPats: []string{},
 	}
@@ -404,23 +404,23 @@ func (t *Trainer) GetStats() Stats {
 	}
 
 	return Stats{
-		CorpusSize:      len(t.corpus),
-		MinPatternLen:   t.minLen,
-		MaxPatternLen:   t.maxLen,
-		TotalPositions:  totalPositions,
-		WillSample:      willSample,
-		CustomPatterns:  len(t.customPats),
+		CorpusSize:     len(t.corpus),
+		MinPatternLen:  t.minLen,
+		MaxPatternLen:  t.maxLen,
+		TotalPositions: totalPositions,
+		WillSample:     willSample,
+		CustomPatterns: len(t.customPats),
 	}
 }
 
 // Stats contains statistics about the training corpus.
 type Stats struct {
-	CorpusSize      int // Total bytes in training corpus
-	MinPatternLen   int // Minimum pattern length being searched
-	MaxPatternLen   int // Maximum pattern length being searched
-	TotalPositions  int // Total substring positions to check
-	WillSample      int // Number of positions that will be sampled
-	CustomPatterns  int // Number of user-provided patterns
+	CorpusSize     int // Total bytes in training corpus
+	MinPatternLen  int // Minimum pattern length being searched
+	MaxPatternLen  int // Maximum pattern length being searched
+	TotalPositions int // Total substring positions to check
+	WillSample     int // Number of positions that will be sampled
+	CustomPatterns int // Number of user-provided patterns
 }
 
 // containsInvalidChars checks if a string contains control characters

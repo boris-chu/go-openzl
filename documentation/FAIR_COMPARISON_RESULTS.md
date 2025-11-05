@@ -248,7 +248,7 @@ RLE data: ~8 bytes
 
 ### Long-Term Strategy
 
-**v0.4.0: Eliminate Double-Wrap**
+**v0.3.3: Eliminate Double-Wrap**
 - Implement native multi-codec frames
 - Target: 514 bytes (199×) on pattern data
 - Timeline: 2-3 weeks
@@ -293,7 +293,7 @@ The fair comparison revealed:
 - Our LZ77 needs significant optimization
 
 **Path forward**:
-1. v0.4.0: Eliminate double-wrap (quick win)
+1. v0.3.3: Eliminate double-wrap (quick win)
 2. v0.5.0: Optimize LZ77 codec (major effort)
 3. v0.6.0: Add FSE entropy coding (polish)
 
