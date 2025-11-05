@@ -90,6 +90,9 @@ issues:
     - path: internal/codec/bitpack\.go
       linters:
         - gocyclo  # Bitpack encode has high complexity due to bit manipulation
+    - path: internal/codec/rangepack\.go
+      linters:
+        - gocyclo  # RangePack encode/decode has high complexity due to multiple data widths
     - linters:
         - govet
       text: "fieldalignment"  # Disable fieldalignment globally (micro-optimization)
