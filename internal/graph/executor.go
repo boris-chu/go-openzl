@@ -214,114 +214,25 @@ func (e *Executor) executeNode(
 	nodeOutputs [][]byte, nodeSizes []uint64,
 	graph *Graph, outputSizes []uint64,
 ) ([]byte, error) {
-	// Look up codec (already done in inferNodeSizes, but we need it again)
+	// Look up codec
 	codec, ok := e.registry.Get(node.CodecID)
 	if !ok {
 		return nil, fmt.Errorf("codec %s not registered", node.CodecID)
 	}
 
-	// Get precomputed output size for decompression
-	//
-	// During compression: nodeSizes[N] = output size of node N
-	// During decompression (reverse execution):
-	//   - If node N is not the first node (nodeIdx > 0), its output feeds node N-1
-	//     → output size = nodeSizes[N-1] (input size of next decoder)
-	//   - If node N is the first node (nodeIdx == 0), it produces the final output
-	//     → output size = final decompressed size (from outputSizes)
-	var outputSize uint64
-	if nodeIdx > 0 {
-		// Output feeds into previous node, so size = that node's compressed input
-		outputSize = nodeSizes[nodeIdx-1]
-	} else {
-		// This is the final decoder (node 0), output = final decompressed size
-		// For LZ77→Huffman pattern, node 0 produces final output
-		// Pattern: Node 0 has no inputs, Node 1 has Inputs=[0], Outputs=[1]
-		if len(graph.Nodes) == 2 && len(node.Inputs) == 0 &&
-			len(graph.Nodes[1].Inputs) == 1 && graph.Nodes[1].Inputs[0] == 0 &&
-			len(graph.Outputs) == 1 && graph.Outputs[0] == 1 {
-			// LZ77→Huffman pattern: node 0 produces final output
-			outputSize = outputSizes[0]
-		} else {
-			// Single-stage: check graph.Outputs
-			isOutputNode := false
-			var outputIndex int
-			for i, outIdx := range graph.Outputs {
-				if outIdx == nodeIdx {
-					isOutputNode = true
-					outputIndex = i
-					break
-				}
-			}
-
-			if isOutputNode {
-				outputSize = outputSizes[outputIndex]
-			} else {
-				return nil, fmt.Errorf("node %d is neither an output nor feeds another node", nodeIdx)
-			}
-		}
+	// Determine output size for this node
+	outputSize, err := e.getNodeOutputSize(nodeIdx, node, graph, nodeSizes, outputSizes)
+	if err != nil {
+		return nil, err
 	}
 
-	// Allocate output buffer (may be empty for outputSize=0)
+	// Allocate output buffer
 	dst := make([]byte, outputSize)
 
-	// Determine source data
-	//
-	// In a compression graph like LZ77(0) → Huffman(1):
-	//   - During compression: node 0 is leaf (src), node 1 uses node 0's output
-	//   - During decompression (reverse execution):
-	//     * Node 1 (highest index) decodes from compressedData first
-	//     * Node 0 decodes from node 1's output
-	//
-	// So for decompression:
-	//   - The LAST node (highest index) is the first decoder (uses compressedData)
-	//   - Earlier nodes decode from later nodes' outputs
-	//
-	// Determine source for decompression:
-	// - Output nodes (specified in graph.Outputs) decode from compressedData
-	// - Other nodes decode from their dependent nodes' outputs (nodes that depend on them)
-	//
-	// Example: LZ77(0) → Huffman(1), Outputs=[1]
-	//   - Node 1 (Huffman, output node) decodes from compressedData
-	//   - Node 0 (LZ77) decodes from Node 1's output
-	var src []byte
-
-	// Check if this node is an output node
-	isOutputNode := false
-	for _, outIdx := range graph.Outputs {
-		if outIdx == nodeIdx {
-			isOutputNode = true
-			break
-		}
-	}
-
-	if isOutputNode {
-		// Output nodes decode from the compressed payload
-		src = compressedData
-	} else {
-		// Non-output nodes decode from their dependent nodes
-		// Find which node depends on this one
-		var dependentNodeIdx int = -1
-		for i, n := range graph.Nodes {
-			for _, inputIdx := range n.Inputs {
-				if inputIdx == nodeIdx {
-					dependentNodeIdx = i
-					break
-				}
-			}
-			if dependentNodeIdx != -1 {
-				break
-			}
-		}
-
-		if dependentNodeIdx == -1 {
-			return nil, fmt.Errorf("node %d is not an output and has no dependent nodes", nodeIdx)
-		}
-
-		if nodeOutputs[dependentNodeIdx] == nil {
-			return nil, fmt.Errorf("node %d output not available (needed by node %d)",
-				dependentNodeIdx, nodeIdx)
-		}
-		src = nodeOutputs[dependentNodeIdx]
+	// Determine source data for decompression
+	src, err := e.getNodeSourceData(nodeIdx, graph, compressedData, nodeOutputs)
+	if err != nil {
+		return nil, err
 	}
 
 	// Execute codec
@@ -330,8 +241,80 @@ func (e *Executor) executeNode(
 		return nil, fmt.Errorf("decode failed: %w", err)
 	}
 
-	// Return exactly the decoded bytes
 	return dst[:n], nil
+}
+
+// getNodeOutputSize determines the output buffer size for a node during decompression
+func (e *Executor) getNodeOutputSize(nodeIdx int, node *Node, graph *Graph, nodeSizes []uint64, outputSizes []uint64) (uint64, error) {
+	if nodeIdx > 0 {
+		// Output feeds into previous node, so size = that node's compressed input
+		return nodeSizes[nodeIdx-1], nil
+	}
+
+	// Node 0: check if it's a special pattern or an output node
+	if e.isLZ77HuffmanPattern(graph, node) {
+		return outputSizes[0], nil
+	}
+
+	// Check if this node is in graph.Outputs
+	for i, outIdx := range graph.Outputs {
+		if outIdx == nodeIdx {
+			return outputSizes[i], nil
+		}
+	}
+
+	return 0, fmt.Errorf("node %d is neither an output nor feeds another node", nodeIdx)
+}
+
+// isLZ77HuffmanPattern checks for the LZ77→Huffman two-node pattern
+func (e *Executor) isLZ77HuffmanPattern(graph *Graph, node *Node) bool {
+	return len(graph.Nodes) == 2 && len(node.Inputs) == 0 &&
+		len(graph.Nodes[1].Inputs) == 1 && graph.Nodes[1].Inputs[0] == 0 &&
+		len(graph.Outputs) == 1 && graph.Outputs[0] == 1
+}
+
+// getNodeSourceData determines the source data for a node during decompression
+func (e *Executor) getNodeSourceData(nodeIdx int, graph *Graph, compressedData []byte, nodeOutputs [][]byte) ([]byte, error) {
+	// Check if this node is an output node
+	if e.isOutputNode(nodeIdx, graph) {
+		// Output nodes decode from the compressed payload
+		return compressedData, nil
+	}
+
+	// Non-output nodes decode from their dependent nodes
+	dependentIdx, err := e.findDependentNode(nodeIdx, graph)
+	if err != nil {
+		return nil, err
+	}
+
+	if nodeOutputs[dependentIdx] == nil {
+		return nil, fmt.Errorf("node %d output not available (needed by node %d)",
+			dependentIdx, nodeIdx)
+	}
+
+	return nodeOutputs[dependentIdx], nil
+}
+
+// isOutputNode checks if a node is in graph.Outputs
+func (e *Executor) isOutputNode(nodeIdx int, graph *Graph) bool {
+	for _, outIdx := range graph.Outputs {
+		if outIdx == nodeIdx {
+			return true
+		}
+	}
+	return false
+}
+
+// findDependentNode finds which node depends on the given node
+func (e *Executor) findDependentNode(nodeIdx int, graph *Graph) (int, error) {
+	for i, n := range graph.Nodes {
+		for _, inputIdx := range n.Inputs {
+			if inputIdx == nodeIdx {
+				return i, nil
+			}
+		}
+	}
+	return -1, fmt.Errorf("node %d is not an output and has no dependent nodes", nodeIdx)
 }
 
 // ExecuteSimple executes a simple single-output graph.
