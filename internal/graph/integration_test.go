@@ -447,22 +447,23 @@ func TestEndToEnd_DeltaHuffmanPipeline(t *testing.T) {
 	t.Logf("After Huffman encoding: %d bytes (%.2fx compression)", len(huffmanEncoded), compressionRatio)
 
 	// Step 3: Create multi-node graph: Delta → Huffman
-	// Node 0: Huffman (leaf node, decompresses from payload)
-	// Node 1: Delta (uses Node 0 output as input)
+	// Graph describes COMPRESSION order (not decompression order)
+	// Node 0: Delta (first compressor, no inputs)
+	// Node 1: Huffman (second compressor, compresses Delta's output)
 	graph := &Graph{
 		Nodes: []*Node{
 			{
-				CodecID: codec.IDHuffman,
-				Params:  nil,
-				Inputs:  nil, // Leaf node (decompresses from compressed payload)
-			},
-			{
 				CodecID: codec.IDDelta,
 				Params:  []byte{8}, // 8-byte elements (uint64)
-				Inputs:  []int{0},  // Uses Huffman output as input
+				Inputs:  nil,       // First compressor (no inputs)
+			},
+			{
+				CodecID: codec.IDHuffman,
+				Params:  nil,
+				Inputs:  []int{0}, // Compresses Delta's output
 			},
 		},
-		Outputs: []int{1}, // Final output is from Delta (Node 1)
+		Outputs: []int{1}, // Final compressed output is from Huffman (Node 1)
 	}
 
 	// Step 4: Encode graph
@@ -476,18 +477,22 @@ func TestEndToEnd_DeltaHuffmanPipeline(t *testing.T) {
 	payload := append(graphBytes, huffmanEncoded...)
 	t.Logf("Total payload: %d bytes (graph + compressed data)", len(payload))
 
-	// Step 6: Create frame
+	// Step 6: Create frame with v22 format (includes node sizes for multi-stage pipelines)
 	testFrame := &frame.Frame{
 		Header: &frame.Header{
-			Magic:   frame.MagicNumberBase + 21,
-			Version: 21,
+			Magic:   frame.MagicNumberBase + 22,
+			Version: 22,
 			Flags:   0,
 		},
 		Outputs: []*frame.Output{
 			{
 				Type:             frame.TypeSerial,
-				DecompressedSize: uint64(len(original)), // Final output size (after Delta)
+				DecompressedSize: uint64(len(original)), // Final output size = 64 bytes
 			},
+		},
+		NodeSizes: []uint64{
+			uint64(len(deltaEncoded)), // Node 0 (Delta) output size = 64 bytes
+			uint64(len(original)),     // Node 1 (Huffman) output size = 64 bytes
 		},
 		Payload: payload,
 	}
@@ -504,13 +509,10 @@ func TestEndToEnd_DeltaHuffmanPipeline(t *testing.T) {
 	compressedData := testFrame.Payload[graphSize:]
 	t.Logf("Compressed data: %d bytes", len(compressedData))
 
-	// Step 9: Execute graph to decompress
-	// This is where smart size inference happens:
-	// - Huffman (Node 0): output size is inferred from Delta's input requirement
-	// - Delta (Node 1): output size comes from frame header (64 bytes)
+	// Step 9: Execute graph to decompress using v22 node sizes
 	executor := DefaultExecutor()
 	outputSizes := []uint64{testFrame.Outputs[0].DecompressedSize}
-	outputs, err := executor.Execute(parsedGraph, compressedData, outputSizes)
+	outputs, err := executor.ExecuteWithNodeSizes(parsedGraph, compressedData, outputSizes, testFrame.NodeSizes)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}

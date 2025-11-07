@@ -106,67 +106,46 @@ func (e *Executor) ExecuteWithNodeSizes(graph *Graph, compressedData []byte, out
 	//   Decompression: final → Huffman⁻¹ → LZ77⁻¹ → src
 	//
 	// So node 1 (Huffman) must decode first, then node 0 (LZ77) decodes its output.
-	//
-	// IMPORTANT: We need to respect dependencies during decompression.
-	// Nodes with NO INPUTS are leaves in the compression graph, and during
-	// decompression they decode from compressedData first.
-	// Then nodes that depend on them can decode from their outputs.
 	nodeOutputs := make([][]byte, len(graph.Nodes))
-	executed := make([]bool, len(graph.Nodes))
 
-	// Execute nodes respecting dependencies
-	executedCount := 0
-	for executedCount < len(graph.Nodes) {
-		// Find a node whose dependencies are all satisfied
-		executedAny := false
-		for i := 0; i < len(graph.Nodes); i++ {
-			if executed[i] {
-				continue // Already done
-			}
-
-			node := graph.Nodes[i]
-
-			// Check if all dependencies are satisfied
-			canExecute := true
-			if len(node.Inputs) > 0 {
-				// Node has dependencies - check if they're all executed
-				for _, inputIdx := range node.Inputs {
-					if !executed[inputIdx] {
-						canExecute = false
-						break
-					}
-				}
-			}
-			// If node has no inputs (leaf), it can always execute
-
-			if canExecute {
-				// Execute this node
-				output, err := e.executeNode(node, i, compressedData, nodeOutputs, nodeSizes, graph, outputSizes)
-				if err != nil {
-					return nil, fmt.Errorf("execute node %d (codec %s): %w", i, node.CodecID, err)
-				}
-				nodeOutputs[i] = output
-				executed[i] = true
-				executedAny = true
-				executedCount++
-			}
+	for i := len(graph.Nodes) - 1; i >= 0; i-- {
+		node := graph.Nodes[i]
+		output, err := e.executeNode(node, i, compressedData, nodeOutputs, nodeSizes, graph, outputSizes)
+		if err != nil {
+			return nil, fmt.Errorf("execute node %d (codec %s): %w", i, node.CodecID, err)
 		}
-
-		if !executedAny {
-			// No node could be executed - circular dependency or bug
-			return nil, fmt.Errorf("cannot make progress: circular dependency or missing inputs")
-		}
+		nodeOutputs[i] = output
 	}
 
 	// Collect final outputs
-	// The graph.Outputs array specifies which nodes produce the final output,
-	// regardless of compression or decompression direction.
-	outputs := make([][]byte, len(graph.Outputs))
-	for i, outIdx := range graph.Outputs {
-		outputs[i] = nodeOutputs[outIdx]
+	// During decompression, the final output comes from root nodes (nodes with no inputs).
+	// These nodes compress the original data during compression, so they produce the
+	// final decompressed data during decompression.
+	//
+	// For single-node graphs, use graph.Outputs directly.
+	// For multi-node graphs, return outputs from nodes with Inputs=[]
+	if len(graph.Nodes) == 1 {
+		// Single node: use graph.Outputs
+		outputs := make([][]byte, len(graph.Outputs))
+		for i, outIdx := range graph.Outputs {
+			outputs[i] = nodeOutputs[outIdx]
+		}
+		return outputs, nil
 	}
 
-	return outputs, nil
+	// Multi-node: return outputs from root nodes (no inputs in compression graph)
+	var finalOutputs [][]byte
+	for i, node := range graph.Nodes {
+		if len(node.Inputs) == 0 {
+			finalOutputs = append(finalOutputs, nodeOutputs[i])
+		}
+	}
+
+	if len(finalOutputs) == 0 {
+		return nil, fmt.Errorf("no root nodes found (all nodes have inputs)")
+	}
+
+	return finalOutputs, nil
 }
 
 // inferNodeSizes computes the output size for each node using smart inference.
@@ -296,24 +275,53 @@ func (e *Executor) executeNode(
 	// So for decompression:
 	//   - The LAST node (highest index) is the first decoder (uses compressedData)
 	//   - Earlier nodes decode from later nodes' outputs
+	//
+	// Determine source for decompression:
+	// - Output nodes (specified in graph.Outputs) decode from compressedData
+	// - Other nodes decode from their dependent nodes' outputs (nodes that depend on them)
+	//
+	// Example: LZ77(0) → Huffman(1), Outputs=[1]
+	//   - Node 1 (Huffman, output node) decodes from compressedData
+	//   - Node 0 (LZ77) decodes from Node 1's output
 	var src []byte
 
-	// Determine source for decompression:
-	// - Leaf nodes (no inputs in compression graph) decompress from compressedData
-	// - Other nodes decompress from their input nodes' outputs
-	if len(node.Inputs) == 0 {
-		// Leaf node in compression = decodes from compressed payload
+	// Check if this node is an output node
+	isOutputNode := false
+	for _, outIdx := range graph.Outputs {
+		if outIdx == nodeIdx {
+			isOutputNode = true
+			break
+		}
+	}
+
+	if isOutputNode {
+		// Output nodes decode from the compressed payload
 		src = compressedData
 	} else {
-		// Non-leaf: decode from input nodes' outputs
-		// In reverse execution, input nodes execute AFTER this node (higher indices)
-		// So we look at nodeOutputs for our input nodes
-		inputIdx := node.Inputs[0] // For now, assume single input
-		if nodeOutputs[inputIdx] == nil {
-			return nil, fmt.Errorf("node %d depends on node %d, but node %d output not available",
-				nodeIdx, inputIdx, inputIdx)
+		// Non-output nodes decode from their dependent nodes
+		// Find which node depends on this one
+		var dependentNodeIdx int = -1
+		for i, n := range graph.Nodes {
+			for _, inputIdx := range n.Inputs {
+				if inputIdx == nodeIdx {
+					dependentNodeIdx = i
+					break
+				}
+			}
+			if dependentNodeIdx != -1 {
+				break
+			}
 		}
-		src = nodeOutputs[inputIdx]
+
+		if dependentNodeIdx == -1 {
+			return nil, fmt.Errorf("node %d is not an output and has no dependent nodes", nodeIdx)
+		}
+
+		if nodeOutputs[dependentNodeIdx] == nil {
+			return nil, fmt.Errorf("node %d output not available (needed by node %d)",
+				dependentNodeIdx, nodeIdx)
+		}
+		src = nodeOutputs[dependentNodeIdx]
 	}
 
 	// Execute codec
