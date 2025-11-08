@@ -245,7 +245,7 @@ func (e *Executor) executeNode(
 }
 
 // getNodeOutputSize determines the output buffer size for a node during decompression
-func (e *Executor) getNodeOutputSize(nodeIdx int, node *Node, graph *Graph, nodeSizes []uint64, outputSizes []uint64) (uint64, error) {
+func (e *Executor) getNodeOutputSize(nodeIdx int, node *Node, graph *Graph, nodeSizes, outputSizes []uint64) (uint64, error) {
 	if nodeIdx > 0 {
 		// Output feeds into previous node, so size = that node's compressed input
 		return nodeSizes[nodeIdx-1], nil
